@@ -1,10 +1,28 @@
 import serial
+import time
 
-with serial.Serial('COM12', 115200, timeout=1) as ser:
-    while True:
-        line = str(ser.read(200))   # read a '\n' terminated line
-        print(line)
-        if line.find("The AT host sample started") >=0:
-            ser.write(b'AT+CFUN?\r\n')
-        if line.find("+CFUN: 0\r\nOK\r\n") >= 0:
-            ser.write(b'AT+CFUN=1\r\n')
+ser = serial.Serial("COM12", 115200)
+
+
+
+print(ser.read_until(b'The AT host sample started\r\n'))
+time.sleep(5)
+ser.timeout=1
+
+
+ser.write(b'AT+CFUN=1\r\n')
+print("AT+CFUN=1")
+print(ser.read(100))
+
+time.sleep(1)
+ser.write(b'AT+CFUN?\r\n')
+print("AT+CFUN?")
+print(ser.read(100))
+
+time.sleep(0.1)
+ser.write(b'AT%NCELLMEAS\r\n')
+print("AT%NCELLMEAS")
+print(ser.read(100))
+
+
+print("finished")
