@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 import pydeck as pdk
 import altair as alt
-from measurement_result import ncellmeas_results
+from measurement_result import ncellmeas_results, ncellmeas_moving_results
 import plotly.express as px
 import numpy as np
 
@@ -27,7 +27,7 @@ def construct_measurement_dictionary(measurement_data):
     for i in range(no_of_neighbors):
         neighbor_dict = {}
         for j, param in enumerate(neighbor_params):
-            neighbor_dict[param] = measurement_list[len(current_params) + len(neighbor_params)*i +j].replace('"', '')
+            neighbor_dict[param] = measurement_list[len(current_params) + len(neighbor_params) * i + j].replace('"', '')
 
         measurement_dict["neighbor_cells"].append(neighbor_dict)
 
@@ -36,7 +36,7 @@ def construct_measurement_dictionary(measurement_data):
 
 
 def get_measurement_dictionary_list(measurement_results):
-    measurement_dictionary_list=[]
+    measurement_dictionary_list = []
     for measurement_list in measurement_results:
         measurement_dictionary_list.append(construct_measurement_dictionary(measurement_list))
 
@@ -67,12 +67,17 @@ def query_base_station_dataset(df, plmn, tac, cell_id):
 
     query_results = df.loc[
         (df["MCC"] == mcc) & (df["MNC"] == mnc) & (df["TAC"] == tac_decimal) & (
-                    df["CID"] == cell_id_decimal)]
+                df["CID"] == cell_id_decimal)]
 
     return query_results
 
 
-
+def get_moving_path_df(base_station_df, moving_measurement_dictionary_list):
+    df = pd.DataFrame()
+    for dictionary in moving_measurement_dictionary_list:
+        res = query_base_station_dataset(base_station_df, dictionary["plmn"], dictionary["tac"], dictionary["cell_id"])
+        df = df.append(res)
+    return df
 
 
 # Ncellmeas command output
@@ -81,10 +86,6 @@ ncellmeas_result = '%NCELLMEAS: 0' \
                    '1300,364,40,24,24' \
                    ',500,55,27,26,33,' \
                    '100702'
-
-
-
-
 
 # Load rows of data into the dataframe.
 first_n_elements = 10000
@@ -96,7 +97,8 @@ st.write("NCELLMEAS measurement result in raw format:")
 measurement_dict = construct_measurement_dictionary(ncellmeas_result)
 st.write(measurement_dict)
 
-query_results_df = query_base_station_dataset(base_station_df, measurement_dict["plmn"], measurement_dict["tac"], measurement_dict["cell_id"])
+query_results_df = query_base_station_dataset(base_station_df, measurement_dict["plmn"], measurement_dict["tac"],
+                                              measurement_dict["cell_id"])
 st.write("Base stations measured by NCELLMEAS command (Main base station):")
 st.write(query_results_df)
 
@@ -127,26 +129,26 @@ r = pdk.Deck(
 )
 
 # Render the deck.gl map in the Streamlit app as a Pydeck chart
-map = st.pydeck_chart(r)
-
+map1 = st.pydeck_chart(r)
 
 # measurement signal power chart of current base station
 measurement_dictionary_list = get_measurement_dictionary_list(ncellmeas_results)
 
 df = pd.DataFrame(
-     np.array([[int(measurement_dict["current_rsrp"]) - 140 for measurement_dict in measurement_dictionary_list],
-               [int(measurement_dict["measurement_time"]) / 1000 for measurement_dict in measurement_dictionary_list],
-               [int(measurement_dict["current_rsrq"]) / 2 - 19.5 for measurement_dict in measurement_dictionary_list]]).T,
-     columns=["current_rsrp", "measurement_time", "current_rsrq"])
+    np.array([[int(measurement_dict["current_rsrp"]) - 140 for measurement_dict in measurement_dictionary_list],
+              [int(measurement_dict["measurement_time"]) / 1000 for measurement_dict in measurement_dictionary_list],
+              [int(measurement_dict["current_rsrq"]) / 2 - 19.5 for measurement_dict in
+               measurement_dictionary_list]]).T,
+    columns=["current_rsrp", "measurement_time", "current_rsrq"])
 
 rsrp_fig = px.line(
     df,
     x="measurement_time",
     y='current_rsrp',
     labels={
-             "measurement_time": "Measurement Time (s) (difference from modem boot time)",
-             "current_rsrp": "Current RSRP (dBm)"
-         },
+        "measurement_time": "Measurement Time (s) (difference from modem boot time)",
+        "current_rsrp": "Current RSRP (dBm)"
+    },
     title='RSRP - Measurement Time'
 )
 
@@ -155,12 +157,46 @@ rsrq_fig = px.line(
     x="measurement_time",
     y='current_rsrq',
     labels={
-             "measurement_time": "Measurement Time (s) (difference from modem boot time)",
-             "current_rsrq": "Current RSRQ (dB)"
-         },
+        "measurement_time": "Measurement Time (s) (difference from modem boot time)",
+        "current_rsrq": "Current RSRQ (dB)"
+    },
     title='RSRQ - Measurement Time'
 )
 
 st.plotly_chart(rsrp_fig)
 st.plotly_chart(rsrq_fig)
 
+query_results_df = query_base_station_dataset(base_station_df, measurement_dict["plmn"], measurement_dict["tac"],
+                                              measurement_dict["cell_id"])
+moving_measurement_dictionary_list = get_measurement_dictionary_list(ncellmeas_moving_results)
+moving_path_df = get_moving_path_df(base_station_df, moving_measurement_dictionary_list)
+
+
+base_station_positions_layer = pdk.Layer(
+    "ScatterplotLayer",
+    data=moving_path_df,
+    pickable=False,
+    opacity=0.3,
+    stroked=True,
+    filled=True,
+    line_width_min_pixels=1,
+    get_position=["Longitude", "Latitude"],
+    get_radius="Range",
+    radius_min_pixels=5,
+    radius_max_pixels=60,
+    get_fill_color=[252, 136, 3],
+    get_line_color=[255, 0, 0],
+    tooltip="test test",
+)
+
+# Create the deck.gl map
+r = pdk.Deck(
+    layers=[base_station_positions_layer],
+    initial_view_state=view,
+    map_style="mapbox://styles/mapbox/light-v10",
+)
+
+# Render the deck.gl map in the Streamlit app as a Pydeck chart
+map2 = st.pydeck_chart(r)
+
+st.write(moving_path_df)
