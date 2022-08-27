@@ -76,7 +76,7 @@ def get_moving_path_df(base_station_df, moving_measurement_dictionary_list):
     df = pd.DataFrame()
     for dictionary in moving_measurement_dictionary_list:
         res = query_base_station_dataset(base_station_df, dictionary["plmn"], dictionary["tac"], dictionary["cell_id"])
-        df = df.append(res)
+        df = pd.concat([df, res])
     return df
 
 
@@ -132,7 +132,7 @@ r = pdk.Deck(
 map1 = st.pydeck_chart(r)
 
 # measurement signal power chart of current base station
-measurement_dictionary_list = get_measurement_dictionary_list(ncellmeas_results)
+measurement_dictionary_list = get_measurement_dictionary_list(ncellmeas_moving_results)
 
 df = pd.DataFrame(
     np.array([[int(measurement_dict["current_rsrp"]) - 140 for measurement_dict in measurement_dictionary_list],
@@ -166,8 +166,7 @@ rsrq_fig = px.line(
 st.plotly_chart(rsrp_fig)
 st.plotly_chart(rsrq_fig)
 
-query_results_df = query_base_station_dataset(base_station_df, measurement_dict["plmn"], measurement_dict["tac"],
-                                              measurement_dict["cell_id"])
+
 moving_measurement_dictionary_list = get_measurement_dictionary_list(ncellmeas_moving_results)
 moving_path_df = get_moving_path_df(base_station_df, moving_measurement_dictionary_list)
 
@@ -200,3 +199,8 @@ r = pdk.Deck(
 map2 = st.pydeck_chart(r)
 
 st.write(moving_path_df)
+
+mode = st.sidebar.radio(
+     "Mode:",
+     ('Stationary', 'Moving'))
+

@@ -1,0 +1,18 @@
+3 Towers at
+ tx1,ty1
+ tx2,ty2
+ tx3,ty3
+
+With signal strengths s1, s2, s3
+
+We calculate the weight of each signal. Essentially a number from 0 to 1 for each tower where the sum of the weights adds up to 1.
+
+Weighted signal w1, w2, w3 where:
+ w1 = s1/(s1+s2+s3)
+ w2 = s2/(s1+s2+s3)
+ w3 = s3/(s1+s2+s3)
+
+
+User will be at
+x: (w1 * tx1 + w2 * tx2+ w3 * tx3)
+y: (w1 * ty1 + w2 * ty2+ w3 * ty3)
