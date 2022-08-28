@@ -21,4 +21,10 @@ def test_triangulate():
 
     plt.scatter(points[0, :], points[1, :], alpha=0.5)
     plt.scatter(pos[0], pos[1], c=2)
+    for i, txt in enumerate(signal_strengths):
+        plt.annotate("Strength: {}".format(txt), (points[0, i], points[1, i]))
+    plt.annotate("Combined position", pos)
+    plt.title("Triangulation of position based on signal strengths")
     plt.show()
+
+test_triangulate()
