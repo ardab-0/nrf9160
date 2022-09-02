@@ -1,14 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def triangulate(points_np, signal_strengths_np):
 
+def triangulate(points_np, signal_strengths_np):
     total_strength = np.sum(signal_strengths_np)
     weights = signal_strengths_np / total_strength
 
     position = np.sum(points_np * weights, axis=1)
     return position
-
 
 
 def test_triangulate():
@@ -25,6 +24,9 @@ def test_triangulate():
         plt.annotate("Strength: {}".format(txt), (points[0, i], points[1, i]))
     plt.annotate("Combined position", pos)
     plt.title("Triangulation of position based on signal strengths")
+    plt.xlabel("x")
+    plt.ylabel("y")
     plt.show()
+
 
 test_triangulate()
