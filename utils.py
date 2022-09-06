@@ -2,11 +2,10 @@ import pandas as pd
 import streamlit as st
 
 
-
 def construct_measurement_dictionary(measurement_data):
     measurement_list = measurement_data.split(",")
-    current_params = ["status", "cell_id", "plmn", "tac", "timing_advance", "current_earfcn", "current_phys_cell_id",
-                      "current_rsrp", "current_rsrq", "measurement_time"]
+    current_params = ["status", "cell_id", "plmn", "tac", "timing_advance", "current_earfcn",
+                      "current_phys_cell_id", "current_rsrp", "current_rsrq", "measurement_time"]
     neighbor_params = ["n_earfcn", "n_phys_cell_id", "n_rsrp", "n_rsrq", "time_diff"]
 
     measurement_dict = {}
@@ -41,7 +40,8 @@ def get_measurement_dictionary_list(measurement_results):
 @st.cache(allow_output_mutation=True)
 def load_data(dataset_file):
     base_station_df = pd.read_csv(dataset_file)
-    base_station_df.columns = ["Radio", "MCC", "MNC", "TAC", "CID", "Unit", "Longitude", "Latitude", "Range", "Samples",
+    base_station_df.columns = ["Radio", "MCC", "MNC", "TAC", "CID", "Unit", "Longitude",
+                               "Latitude", "Range", "Samples",
                                "Changeable=1", "Created", "Updated", "AverageSignal"]
     return base_station_df
 
@@ -70,9 +70,10 @@ def query_base_station_dataset(df, plmn, tac, cell_id):
 def get_moving_path_df(base_station_df, moving_measurement_dictionary_list):
     df = pd.DataFrame()
     for dictionary in moving_measurement_dictionary_list:
-        res = query_base_station_dataset(base_station_df, dictionary["plmn"], dictionary["tac"], dictionary["cell_id"])
-        res["measurement_time"] = dictionary["measurement_time"]
-        res["current_rsrp"] = dictionary["current_rsrp"]
-        res["current_rsrq"] = dictionary["current_rsrq"]
+        res = query_base_station_dataset(base_station_df, dictionary["plmn"],
+                                         dictionary["tac"], dictionary["cell_id"])
+        res["measurement_time"] = int(dictionary["measurement_time"])
+        res["current_rsrp"] = int(dictionary["current_rsrp"])
+        res["current_rsrq"] = int(dictionary["current_rsrq"])
         df = pd.concat([df, res])
     return df
