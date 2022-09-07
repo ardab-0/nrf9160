@@ -1,6 +1,8 @@
 from geographiclib.geodesic import Geodesic
 import numpy as np
-import geopy
+import geopy.distance
+
+
 def get_distance_and_bearing(point_from, point_to):
     """
 
@@ -14,8 +16,6 @@ def get_distance_and_bearing(point_from, point_to):
     return distance_meter, bearing_angle_deg
 
 
-def adjust_angle(angle):
-    return - angle + 90
 
 
 def get_cartesian_coordinates(coordinates_np):
@@ -33,7 +33,7 @@ def get_cartesian_coordinates(coordinates_np):
         # print("dy", dy)
         # print("\n\n")
         cartesian_coordinates_np[i] = cartesian_coordinates_np[i - 1] + np.array([dx, dy])
-        i+=1
+        i += 1
     return cartesian_coordinates_np
 
 
@@ -43,9 +43,13 @@ def get_coordinates(cartesian_coordinates_np, original_coordinates_np):
     i = 1
 
     while i < len(coordinates):
-        displacement = cartesian_coordinates_np[i] - cartesian_coordinates_np[i-1]
+        displacement = cartesian_coordinates_np[i] - cartesian_coordinates_np[i - 1]
         dist_m = np.linalg.norm(displacement)
         bearing_angle_deg = np.rad2deg(np.arctan2(displacement[1], displacement[0]))
 
-        next_point = geopy.distance.distance(miles=10).destination((coordinates[i-1, 0], coordinates[i-1, 1]), bearing=adjust_angle(bearing_angle_deg))
+        next_point = geopy.distance.distance(meters=dist_m).destination((coordinates[i - 1, 0], coordinates[i - 1, 1]),
+                                                                        bearing=bearing_angle_deg)
         coordinates[i, 0], coordinates[i, 1] = next_point[0], next_point[1]
+        i += 1
+
+    return coordinates
