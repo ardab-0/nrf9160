@@ -1,7 +1,7 @@
 import streamlit as st
 from utils import *
 from filterpy.kalman import predict, update
-from measurement_result import ncellmeas_moving_results
+from measurement_result import ncellmeas_moving_results, ncellmeas_results
 import numpy as np
 from geodesic_calculations import get_cartesian_coordinates, get_coordinates
 import plotly.graph_objects as go
@@ -34,11 +34,25 @@ def get_kalman_matrices(measurement_sigma=1, dt=1, sigma_a=1):
     return F, H, R, Q
 
 
-map_radius_scale = 1 / 30
-sigma_a = 0.03
+# map_radius_scale = 1 / 1
+# sigma_a = 0.03
+
+dataset_type = st.sidebar.selectbox(
+     'Dataset type: ',
+     ('Stationary', 'Moving'))
+sigma_a = st.sidebar.slider('Acceleration Sigma (m/s\u00b2)', 0.0, 2.0, 0.03)
+map_radius_scale = st.sidebar.slider('Scale of radii', 0.0, 1.0, 0.03)
+
+measurement = None
+if dataset_type == "Stationary":
+    measurement = ncellmeas_results
+elif dataset_type == "Moving":
+    measurement = ncellmeas_moving_results
+else:
+    raise Exception("Invalid value selected")
 
 base_station_df = load_data("262.csv")
-moving_measurement_dictionary_list = get_measurement_dictionary_list(ncellmeas_moving_results)
+moving_measurement_dictionary_list = get_measurement_dictionary_list(measurement)
 moving_path_df = get_moving_path_df(base_station_df, moving_measurement_dictionary_list)
 
 measurements = moving_path_df[["Longitude", "Latitude", "measurement_time", "Range"]].to_numpy()
@@ -64,13 +78,14 @@ for i, measurement in enumerate(measurements):
     x, P = update(x, P, z, R, H)
     filtered_cartesian_coordinates[i] = np.squeeze(H @ x)
     measurement_uncertainties[i] = P[0, 0]
-    st.write(P)
+    # st.write(P)
 
 filtered_geographic_coordinates = get_coordinates(filtered_cartesian_coordinates, measurements[:, 0:2])
 moving_path_df["filtered_latitude"] = filtered_geographic_coordinates[:, 1]
 moving_path_df["filtered_longitude"] = filtered_geographic_coordinates[:, 0]
 moving_path_df["filtered_measurement_uncertainties"] = measurement_uncertainties
 
+# scale map representations of radii to make them more legible in map
 moving_path_df["filtered_measurement_uncertainties"] *= map_radius_scale
 moving_path_df["Range"] *= map_radius_scale
 

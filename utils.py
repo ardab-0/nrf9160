@@ -64,7 +64,7 @@ def query_base_station_dataset(df, plmn, tac, cell_id):
         (df["MCC"] == mcc) & (df["MNC"] == mnc) & (df["TAC"] == tac_decimal) & (
                 df["CID"] == cell_id_decimal)]
 
-    return query_results
+    return query_results.head(1)
 
 
 def get_moving_path_df(base_station_df, moving_measurement_dictionary_list):
