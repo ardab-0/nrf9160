@@ -1,6 +1,6 @@
 import pandas as pd
 import streamlit as st
-
+import numpy as np
 
 def construct_measurement_dictionary(measurement_data):
     measurement_list = measurement_data.split(",")
@@ -77,3 +77,28 @@ def get_moving_path_df(base_station_df, moving_measurement_dictionary_list):
         res["current_rsrq"] = int(dictionary["current_rsrq"])
         df = pd.concat([df, res])
     return df
+
+
+def get_kalman_matrices(measurement_sigma=1, dt=1, sigma_a=1):
+    F = np.array([[1, dt, 0.5 * dt ** 2, 0, 0, 0],
+                  [0, 1, dt, 0, 0, 0],
+                  [0, 0, 1, 0, 0, 0],
+                  [0, 0, 0, 1, dt, 0.5 * dt ** 2],
+                  [0, 0, 0, 0, 1, dt],
+                  [0, 0, 0, 0, 0, 1]
+                  ], dtype=float)
+
+    H = np.array([[1, 0, 0, 0, 0, 0],
+                  [0, 0, 0, 1, 0, 0]], dtype=float)
+
+    R = np.array([[measurement_sigma, 0],
+                  [0, measurement_sigma]], dtype=float)
+
+    Q = sigma_a ** 2 * np.array([[dt ** 4 / 4, dt ** 3 / 2, dt ** 2 / 2, 0, 0, 0],
+                                 [dt ** 3 / 2, dt ** 2, dt, 0, 0, 0],
+                                 [dt ** 2 / 2, dt, 1, 0, 0, 0],
+                                 [0, 0, 0, dt ** 4 / 4, dt ** 3 / 2, dt ** 2 / 2],
+                                 [0, 0, 0, dt ** 3 / 2, dt ** 2, dt],
+                                 [0, 0, 0, dt ** 2 / 2, dt, 1]], dtype=float)
+
+    return F, H, R, Q
