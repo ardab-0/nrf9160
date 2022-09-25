@@ -21,6 +21,21 @@ import numpy as np
 import geopy.distance
 import pandas as pd
 import streamlit as st
+import serial.tools.list_ports
+
+if st.sidebar.button("Refresh COM Ports"):
+    st.experimental_rerun()
+
+ports = serial.tools.list_ports.comports()
+port_list = []
+
+for port, desc, hwid in sorted(ports):
+    # print("{}: {} [{}]".format(port, desc, hwid))
+    port_list.append(port)
+
+com_port = st.sidebar.selectbox(
+    'COM PORTS: ',
+    port_list)
 
 # Ncellmeas command output
 ncellmeas_result = '%NCELLMEAS: 0' \
@@ -107,40 +122,3 @@ rsrq_fig = px.line(
 
 st.plotly_chart(rsrp_fig)
 st.plotly_chart(rsrq_fig)
-
-
-moving_measurement_dictionary_list = get_measurement_dictionary_list(ncellmeas_moving_results)
-moving_path_df = get_moving_path_df(base_station_df, moving_measurement_dictionary_list)
-
-
-base_station_positions_layer = pdk.Layer(
-    "ScatterplotLayer",
-    data=moving_path_df,
-    pickable=False,
-    opacity=0.3,
-    stroked=True,
-    filled=True,
-    line_width_min_pixels=1,
-    get_position=["Longitude", "Latitude"],
-    get_radius="Range",
-    radius_min_pixels=5,
-    radius_max_pixels=60,
-    get_fill_color=[252, 136, 3],
-    get_line_color=[255, 0, 0],
-    tooltip="test test",
-)
-
-# Create the deck.gl map
-r = pdk.Deck(
-    layers=[base_station_positions_layer],
-    initial_view_state=view,
-    map_style="mapbox://styles/mapbox/light-v10",
-)
-
-# Render the deck.gl map in the Streamlit app as a Pydeck chart
-map2 = st.pydeck_chart(r)
-
-
-
-
-
