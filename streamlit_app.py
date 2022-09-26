@@ -22,6 +22,15 @@ import geopy.distance
 import pandas as pd
 import streamlit as st
 import serial.tools.list_ports
+from threaded_serial import Serial_Communication
+import queue
+import threading
+
+# add session state variables
+if 'serial_running' not in st.session_state:
+    st.session_state.serial_running = False
+if 'ser_com' not in st.session_state:
+    st.session_state.ser_com = None
 
 if st.sidebar.button("Refresh COM Ports"):
     st.experimental_rerun()
@@ -36,6 +45,18 @@ for port, desc, hwid in sorted(ports):
 com_port = st.sidebar.selectbox(
     'COM PORTS: ',
     port_list)
+
+serial_on_off_button = st.sidebar.radio(label='On/Off Connection', options=["off", "on"])
+
+if serial_on_off_button == "on" and st.session_state.serial_running is False:
+    st.session_state.ser_com = Serial_Communication(com_port)
+    st.session_state.ser_com.initialize()
+    st.session_state.serial_running = True
+elif serial_on_off_button == "off" and st.session_state.serial_running is True:
+    st.session_state.ser_com.close_connection()
+    st.session_state.serial_running = False
+
+print("here3")
 
 # Ncellmeas command output
 ncellmeas_result = '%NCELLMEAS: 0' \
