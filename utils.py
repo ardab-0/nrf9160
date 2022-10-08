@@ -2,7 +2,7 @@ import pandas as pd
 import streamlit as st
 import numpy as np
 
-def construct_measurement_dictionary(measurement_data):
+def construct_measurement_dictionary(measurement_data, return_measurement_list=False):
     measurement_list = measurement_data.split(",")
     current_params = ["status", "cell_id", "plmn", "tac", "timing_advance", "current_earfcn",
                       "current_phys_cell_id", "current_rsrp", "current_rsrq", "measurement_time"]
@@ -26,6 +26,8 @@ def construct_measurement_dictionary(measurement_data):
         measurement_dict["neighbor_cells"].append(neighbor_dict)
 
     measurement_dict["timing_advance_measurement_time"] = measurement_list[-1]
+    if return_measurement_list:
+        return measurement_dict, measurement_list
     return measurement_dict
 
 
