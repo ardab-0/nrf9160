@@ -2,10 +2,10 @@ import time
 import threading
 import serial
 import queue
-
+import csv
 
 class Serial_Communication:
-    def __init__(self, port):
+    def __init__(self, port, csv_reader_writer):
         self.event = threading.Event()
         self.port = port
         self.producer_lock = threading.Lock()
@@ -13,6 +13,7 @@ class Serial_Communication:
         self.producer_lock.acquire()
         self.threads = []
         self.ser = None
+        self.csv_reader_writer = csv_reader_writer
 
     def read_port(self, q, ser, event):
         while not event.is_set():
@@ -43,7 +44,9 @@ class Serial_Communication:
         while not event.is_set():
             while not q.empty():
                 message = q.get()
+                self.csv_reader_writer.write_csv(message)
                 print("Show data:", message)
+
 
     def initialize(self):
         self.ser = serial.Serial(self.port, 115200, timeout=None)
@@ -69,6 +72,28 @@ class Serial_Communication:
 
 
 
+class Csv_Reader_Writer:
+    def __init__(self, filename):
+        self.producer_lock = threading.Lock()
+        self.consumer_lock = threading.Lock()
+        self.consumer_lock.acquire()
+        self.filename = filename
+
+    def write_csv(self, message):
+        self.producer_lock.acquire()
+        with open(self.filename, 'a', newline='') as csvfile:
+            spamwriter = csv.writer(csvfile)
+            spamwriter.writerow([message])
+        self.producer_lock.release()
+
+    def read_csv(self):
+        self.producer_lock.acquire()
+        with open(self.filename, newline='') as csvfile:
+            spamreader = csv.reader(csvfile)
+            for row in spamreader:
+                print(', '.join(row))
+        self.producer_lock.release()
+
 if __name__ == '__main__':
     # ser = serial.Serial("COM4", 115200, timeout=None)
     # q = queue.Queue()
@@ -84,8 +109,12 @@ if __name__ == '__main__':
     # thread1.join()
     # thread2.join()
     # thread3.join()
-    ser_com = Serial_Communication("COM4")
+    csv_reader_writer = Csv_Reader_Writer("saved_measurements/1.csv")
+    ser_com = Serial_Communication("COM4", csv_reader_writer)
     ser_com.initialize()
+
+
+    # csv_reader_writer.read_csv()
 
     time.sleep(5)
     print("closing connection")
