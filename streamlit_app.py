@@ -56,7 +56,6 @@ elif serial_on_off_button == "off" and st.session_state.serial_running is True:
     st.session_state.ser_com.close_connection()
     st.session_state.serial_running = False
 
-print("here3")
 
 # Ncellmeas command output
 ncellmeas_result = '%NCELLMEAS: 0' \

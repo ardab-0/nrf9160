@@ -14,8 +14,8 @@ from constants import S_TO_MS
 dataset_type = st.sidebar.selectbox(
      'Dataset type: ',
      ('Stationary', 'Moving'))
-sigma_a = st.sidebar.slider('Acceleration Sigma (m/s\u00b2)', 0.0, 2.0, 0.15)
-map_radius_scale = st.sidebar.slider('Scale of radii', 0.0, 1.0, 0.03)
+sigma_a = st.sidebar.slider('Acceleration Standard Deviation (m/s\u00b2)', 0.0, 2.0, 0.15)
+map_radius_scale = st.sidebar.slider('Scale of Radii on Map', 0.0, 1.0, 0.03)
 
 measurement = None
 if dataset_type == "Stationary":
@@ -92,8 +92,12 @@ st.plotly_chart(fig)
 
 
 # Plot coordiantes on map
+
+# scaling for display
 moving_path_df["filtered_measurement_uncertainties"] *= map_radius_scale
 moving_path_df["Range"] *= map_radius_scale
+# scaling for display
+
 unfiltered_path_layer = pdk.Layer(
     "ScatterplotLayer",
     data=moving_path_df,
@@ -139,8 +143,11 @@ r = pdk.Deck(
 # Render the deck.gl map in the Streamlit app as a Pydeck chart
 st.write("Kalman Filtered and Unfiltered Coordinates on Map")
 map = st.pydeck_chart(r)
+
+# scaling for display
 moving_path_df["filtered_measurement_uncertainties"] /= map_radius_scale
 moving_path_df["Range"] /= map_radius_scale
+# scaling for display
 
 st.write("")
 
