@@ -2,10 +2,10 @@ import time
 import threading
 import serial
 import queue
-import csv
+import os
 
 class Serial_Communication:
-    def __init__(self, port, csv_reader_writer):
+    def __init__(self, port, file_reader_writer):
         self.event = threading.Event()
         self.port = port
         self.producer_lock = threading.Lock()
@@ -13,7 +13,7 @@ class Serial_Communication:
         self.producer_lock.acquire()
         self.threads = []
         self.ser = None
-        self.csv_reader_writer = csv_reader_writer
+        self.file_reader_writer = file_reader_writer
 
     def read_port(self, q, ser, event):
         while not event.is_set():
@@ -44,7 +44,7 @@ class Serial_Communication:
         while not event.is_set():
             while not q.empty():
                 message = q.get()
-                self.csv_reader_writer.write_csv(message)
+                self.file_reader_writer.write(message)
                 print("Show data:", message)
 
 
@@ -72,27 +72,32 @@ class Serial_Communication:
 
 
 
-class Csv_Reader_Writer:
+class File_Reader_Writer:
     def __init__(self, filename):
         self.producer_lock = threading.Lock()
         self.consumer_lock = threading.Lock()
         self.consumer_lock.acquire()
         self.filename = filename
 
-    def write_csv(self, message):
-        self.producer_lock.acquire()
-        with open(self.filename, 'a', newline='') as csvfile:
-            spamwriter = csv.writer(csvfile)
-            spamwriter.writerow([message])
-        self.producer_lock.release()
+    def write(self, message):
+        message = message[:-2]
+        message = str(message, 'utf-8')
+        print(message)
 
-    def read_csv(self):
+        if message.find("%NCELLMEAS: 0") >= 0:
+            print("MEssage:", message)
+            # _, measurement_list = construct_measurement_dictionary(message, return_measurement_list=True)
+            self.producer_lock.acquire()
+            with open(self.filename, "a+") as file:
+                file.write(message + "\n")
+            self.producer_lock.release()
+
+    def read(self):
         self.producer_lock.acquire()
-        with open(self.filename, newline='') as csvfile:
-            spamreader = csv.reader(csvfile)
-            for row in spamreader:
-                print(', '.join(row))
+        with open(self.filename) as file:
+            measurement_lines = file.readlines()
         self.producer_lock.release()
+        return measurement_lines
 
 if __name__ == '__main__':
     # ser = serial.Serial("COM4", 115200, timeout=None)
@@ -109,7 +114,7 @@ if __name__ == '__main__':
     # thread1.join()
     # thread2.join()
     # thread3.join()
-    csv_reader_writer = Csv_Reader_Writer("saved_measurements/1.csv")
+    csv_reader_writer = File_Reader_Writer("saved_measurements/1.txt")
     ser_com = Serial_Communication("COM4", csv_reader_writer)
     ser_com.initialize()
 
