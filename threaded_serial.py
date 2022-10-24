@@ -3,6 +3,7 @@ import threading
 import serial
 import queue
 import os
+from utils import construct_measurement_dictionary
 
 class Serial_Communication:
     def __init__(self, port, file_reader_writer):
@@ -14,6 +15,8 @@ class Serial_Communication:
         self.threads = []
         self.ser = None
         self.file_reader_writer = file_reader_writer
+        self.command = None
+        self.neighbor_stack = []
 
     def read_port(self, q, ser, event):
         while not event.is_set():
@@ -33,10 +36,12 @@ class Serial_Communication:
                 time.sleep(prep_period)
                 prep_commands_idx += 1
             else:
-                command = "AT%NCELLMEAS"
+                # command = "AT%NCELLMEAS"
                 time.sleep(measurement_period)
             self.consumer_lock.acquire()
-            ser.write(bytes(command + "\r\n", 'utf-8'))
+            if self.command is not None:
+                ser.write(bytes(self.command + "\r\n", 'utf-8'))
+                self.command = None
             self.producer_lock.release()
 
 
@@ -44,8 +49,23 @@ class Serial_Communication:
         while not event.is_set():
             while not q.empty():
                 message = q.get()
+                message = message[:-2]
+                message = str(message, 'utf-8')
                 self.file_reader_writer.write(message)
                 print("Show data:", message)
+
+
+    def evaluate(self, command, response):
+        if command == "AT+CFUN=1" and response == "OK":
+            return "AT%NCELLMEAS"
+        elif command == "AT%NCELLMEAS" and response.find("%NCELLMEAS") > 0:
+            if response.find("%NCELLMEAS: 0") > 0:
+                current_measurement_dictionary = construct_measurement_dictionary(response)
+                # print("3", current_measurement_dictionary)
+                if "neighbor_cells" in current_measurement_dictionary:
+                    self.neighbor_stack = current_measurement_dictionary["neighbor_cells"]
+            return "AT+CFUN=0"
+        elif command == "AT+CFUN=0" and response == "OK":
 
 
     def initialize(self):
@@ -80,8 +100,7 @@ class File_Reader_Writer:
         self.filename = filename
 
     def write(self, message):
-        message = message[:-2]
-        message = str(message, 'utf-8')
+
         print(message)
 
         if message.find("%NCELLMEAS: 0") >= 0:
