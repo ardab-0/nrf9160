@@ -3,7 +3,8 @@ import threading
 import serial
 import queue
 import os
-from utils import construct_measurement_dictionary
+from fsm import Controller
+
 
 class Serial_Communication:
     def __init__(self, port, file_reader_writer):
@@ -11,12 +12,16 @@ class Serial_Communication:
         self.port = port
         self.producer_lock = threading.Lock()
         self.consumer_lock = threading.Lock()
+        self.command_producer_lock = threading.Lock()
+        self.command_consumer_lock = threading.Lock()
         self.producer_lock.acquire()
+        self.command_producer_lock.acquire()
         self.threads = []
         self.ser = None
         self.file_reader_writer = file_reader_writer
-        self.command = None
+        self.command = "AT+CFUN=1"
         self.neighbor_stack = []
+        self.controller = Controller()
 
     def read_port(self, q, ser, event):
         while not event.is_set():
@@ -26,23 +31,21 @@ class Serial_Communication:
 
 
     def send_measure_command(self, ser, event):
-        prep_commands = ["AT+CFUN=1", "AT+CFUN=?", "AT+CFUN=1"]
-        prep_commands_idx = 0
+
         measurement_period = 1
-        prep_period = 0.5
         while not event.is_set():
-            if prep_commands_idx < len(prep_commands):
-                command = prep_commands[prep_commands_idx]
-                time.sleep(prep_period)
-                prep_commands_idx += 1
-            else:
-                # command = "AT%NCELLMEAS"
-                time.sleep(measurement_period)
-            self.consumer_lock.acquire()
+            time.sleep(measurement_period)
+
+            self.command_consumer_lock.acquire()
             if self.command is not None:
+                print("Send", self.command)
+                self.consumer_lock.acquire()
                 ser.write(bytes(self.command + "\r\n", 'utf-8'))
+                self.producer_lock.release()
                 self.command = None
-            self.producer_lock.release()
+            self.command_producer_lock.release()
+
+
 
 
     def show_data(self, q, event):
@@ -51,22 +54,23 @@ class Serial_Communication:
                 message = q.get()
                 message = message[:-2]
                 message = str(message, 'utf-8')
-                self.file_reader_writer.write(message)
                 print("Show data:", message)
+                self.command_producer_lock.acquire()
+                self.command = self.evaluate(message)
+                self.command_consumer_lock.release()
+                self.file_reader_writer.write(message)
 
 
-    def evaluate(self, command, response):
-        if command == "AT+CFUN=1" and response == "OK":
-            return "AT%NCELLMEAS"
-        elif command == "AT%NCELLMEAS" and response.find("%NCELLMEAS") > 0:
-            if response.find("%NCELLMEAS: 0") > 0:
-                current_measurement_dictionary = construct_measurement_dictionary(response)
-                # print("3", current_measurement_dictionary)
-                if "neighbor_cells" in current_measurement_dictionary:
-                    self.neighbor_stack = current_measurement_dictionary["neighbor_cells"]
-            return "AT+CFUN=0"
-        elif command == "AT+CFUN=0" and response == "OK":
 
+    def evaluate(self, response):
+        if response == "OK":
+            self.controller.ok()
+        elif response.find("%NCELLMEAS: 0") >= 0:
+            self.controller.ok(response)
+        else:
+            self.controller.not_ok()
+        command = self.controller.get_next_command()[0]
+        return command
 
     def initialize(self):
         self.ser = serial.Serial(self.port, 115200, timeout=None)
@@ -101,10 +105,10 @@ class File_Reader_Writer:
 
     def write(self, message):
 
-        print(message)
+        # print(message)
 
         if message.find("%NCELLMEAS: 0") >= 0:
-            print("MEssage:", message)
+            # print("MEssage:", message)
             # _, measurement_list = construct_measurement_dictionary(message, return_measurement_list=True)
             self.producer_lock.acquire()
             with open(self.filename, "a+") as file:

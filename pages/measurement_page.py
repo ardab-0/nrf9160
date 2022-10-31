@@ -29,11 +29,11 @@ from threaded_serial import File_Reader_Writer, Serial_Communication
 file_reader_writer = File_Reader_Writer("saved_measurements/1.txt")
 ser_com = Serial_Communication("COM4", file_reader_writer)
 ser_com.initialize()
-placeholder = st.empty()
+# placeholder = st.empty()
 for i in range(200):
     measurements = file_reader_writer.read()
-    with placeholder.container():
-        st.write(measurements)
+    # with placeholder.container():
+    #     st.write(measurements)
 
     time.sleep(1)
 print("closing connection")
