@@ -29,7 +29,6 @@ class Serial_Communication:
             q.put(ser.read_until())
             self.consumer_lock.release()
 
-
     def send_measure_command(self, ser, event):
 
         measurement_period = 1
@@ -45,9 +44,6 @@ class Serial_Communication:
                 self.command = None
             self.command_producer_lock.release()
 
-
-
-
     def show_data(self, q, event):
         while not event.is_set():
             while not q.empty():
@@ -56,18 +52,25 @@ class Serial_Communication:
                 message = str(message, 'utf-8')
                 print("Show data:", message)
                 self.command_producer_lock.acquire()
-                self.command = self.evaluate(message)
+                self.command = self.evaluate(message, q)
                 self.command_consumer_lock.release()
                 self.file_reader_writer.write(message)
 
-
-
-    def evaluate(self, response):
-        if response == "OK":
+    def evaluate(self, response, q):
+        if response == "OK" and (self.controller.state != "wait_adjusted_measurement_result"
+                                 or self.controller.state != "wait_measurement_result"):
             self.controller.ok()
-        elif response.find("%NCELLMEAS: 0") >= 0:
+        elif response.find("%NCELLMEAS: 0") >= 0 and (self.controller.state == "wait_adjusted_measurement_result"
+                                                      or self.controller.state == "wait_measurement_result"):
             self.controller.ok(response)
+        elif response.find("%NCELLMEAS: 1") >= 0 and self.controller.state == "wait_adjusted_measurement_result":
+            self.controller.ok()
+            # while not q.empty:
+            #     print("Emptying queue due to message order mismatch: ", q.get())
         else:
+            time.sleep(1)
+            while not q.empty:
+                print("Emptying queue due to message order mismatch: ", q.get())
             self.controller.not_ok()
         command = self.controller.get_next_command()[0]
         return command
@@ -76,15 +79,14 @@ class Serial_Communication:
         self.ser = serial.Serial(self.port, 115200, timeout=None)
         q = queue.Queue()
         thread1 = threading.Thread(target=self.read_port, args=(q, self.ser, self.event))
-        thread2 = threading.Thread(target=self.show_data, args=(q,self.event))
-        thread3 = threading.Thread(target=self.send_measure_command, args=(self.ser,self.event))
+        thread2 = threading.Thread(target=self.show_data, args=(q, self.event))
+        thread3 = threading.Thread(target=self.send_measure_command, args=(self.ser, self.event))
         thread1.start()
         thread2.start()
         thread3.start()
         self.threads.append(thread1)
         self.threads.append(thread2)
         self.threads.append(thread3)
-
 
     def close_connection(self):
         print("closing")
@@ -95,7 +97,6 @@ class Serial_Communication:
         self.ser.close()
 
 
-
 class File_Reader_Writer:
     def __init__(self, filename):
         self.producer_lock = threading.Lock()
@@ -104,7 +105,6 @@ class File_Reader_Writer:
         self.filename = filename
 
     def write(self, message):
-
         # print(message)
 
         if message.find("%NCELLMEAS: 0") >= 0:
@@ -121,6 +121,7 @@ class File_Reader_Writer:
             measurement_lines = file.readlines()
         self.producer_lock.release()
         return measurement_lines
+
 
 if __name__ == '__main__':
     # ser = serial.Serial("COM4", 115200, timeout=None)
@@ -140,7 +141,6 @@ if __name__ == '__main__':
     csv_reader_writer = File_Reader_Writer("saved_measurements/1.txt")
     ser_com = Serial_Communication("COM4", csv_reader_writer)
     ser_com.initialize()
-
 
     # csv_reader_writer.read_csv()
 

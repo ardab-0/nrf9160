@@ -1,11 +1,12 @@
 from automat import MethodicalMachine
-from utils import construct_measurement_dictionary, get_band
+from utils import construct_measurement_dictionary, get_band, int2onehot
 
 class Controller():
     _machine = MethodicalMachine()
 
     def __init__(self):
         self.neighbor_stack = []
+        self.state = "activate"
 
     @_machine.state(initial=True)
     def activate(self):
@@ -65,33 +66,31 @@ class Controller():
 
     @_machine.output()
     def get_activate_command(self):
-        "Heat up the heating element, which should cause coffee to happen."
         return "AT+CFUN=1"
 
     @_machine.output()
     def get_deactivate_command(self):
-        "Heat up the heating element, which should cause coffee to happen."
         return "AT+CFUN=0"
 
     @_machine.output()
     def get_measure_command(self):
-        "Heat up the heating element, which should cause coffee to happen."
         return "AT%NCELLMEAS"
 
     @_machine.output()
     def get_empty_command(self):
-        "Heat up the heating element, which should cause coffee to happen."
         return ""
 
     @_machine.output()
     def get_adjust_search_params_command(self):
         neighbor = self.neighbor_stack.pop(0)
-        command = 'AT%XCOUNTRYDATA=1,"4,{},{},{}"'.format("262", get_band(int(neighbor["n_earfcn"])), int(neighbor["n_earfcn"]))
+        command = 'AT%XBANDLOCK=2,"{}"'.format(int2onehot(get_band(int(neighbor["n_earfcn"]))))
         return command
 
 
     @_machine.output()
     def save_measurement(self, response):
+        if response is None:
+            return
         current_measurement_dictionary = construct_measurement_dictionary(response)
         print(current_measurement_dictionary)
         if "neighbor_cells" in current_measurement_dictionary:
@@ -101,7 +100,6 @@ class Controller():
 
     @_machine.output()
     def change_state_based_on_neighbor_count(self):
-        "Heat up the heating element, which should cause coffee to happen."
         if len(self.neighbor_stack) == 0:
             self.ok_neighbor_stack_0()
         else:
@@ -109,63 +107,62 @@ class Controller():
 
     @_machine.output()
     def get_clear_search_params_command(self):
-        "Heat up the heating element, which should cause coffee to happen."
-        return "AT%XCOUNTRYDATA=0"
+        return "AT%XBANDLOCK=0"
 
     @_machine.output()
     def activate_ok(self):
-        "Heat up the heating element, which should cause coffee to happen."
-        print("activate to measure")
+        print("activate to measure\n")
+        self.state = "measure"
 
     @_machine.output()
     def measure_ok(self):
-        "Heat up the heating element, which should cause coffee to happen."
-        print("measure to wait_measurement_result")
+        print("measure to wait_measurement_result\n")
+        self.state = "wait_measurement_result"
 
     @_machine.output()
     def wait_measurement_result_ok(self):
-        "Heat up the heating element, which should cause coffee to happen."
-        print("wait_measurement_result to deactivate")
+        print("wait_measurement_result to deactivate\n")
+        self.state = "deactivate"
 
     @_machine.output()
     def deactivate_ok(self):
-        "Heat up the heating element, which should cause coffee to happen."
-        print("deactivate to clear_search_params")
+        print("deactivate to clear_search_params\n")
+        self.state = "clear_search_params"
 
     @_machine.output()
     def clear_search_params_0_ok(self):
-        "Heat up the heating element, which should cause coffee to happen."
-        print("clear_search_params to activate")
+        print("clear_search_params to activate\n")
+        self.state = "activate"
 
     @_machine.output()
     def clear_search_params_larger_0_ok(self):
-        "Heat up the heating element, which should cause coffee to happen."
-        print("clear_search_params to adjust_search_params")
+        print("clear_search_params to adjust_search_params\n")
+        self.state = "adjust_search_params"
 
     @_machine.output()
     def adjust_search_params_ok(self):
-        "Heat up the heating element, which should cause coffee to happen."
-        print("adjust_search_params to activate_after_adjustment")
+        print("adjust_search_params to activate_after_adjustment\n")
+        self.state = "activate_after_adjustment"
 
     @_machine.output()
     def activate_after_adjustment_ok(self):
-        "Heat up the heating element, which should cause coffee to happen."
-        print("activate_after_adjustment to adjusted_measure")
+        print("activate_after_adjustment to adjusted_measure\n")
+        self.state = "adjusted_measure"
 
     @_machine.output()
     def adjusted_measure_ok(self):
-        "Heat up the heating element, which should cause coffee to happen."
-        print("adjusted_measure to wait_adjusted_measurement_result")
+        print("adjusted_measure to wait_adjusted_measurement_result\n")
+        self.state = "wait_adjusted_measurement_result"
 
     @_machine.output()
     def wait_adjusted_measurement_result_ok(self):
-        "Heat up the heating element, which should cause coffee to happen."
-        print("wait_adjusted_measurement_result to deactivate")
+        print("wait_adjusted_measurement_result to deactivate\n")
+        self.state = "deactivate"
 
     @_machine.output()
     def clear_search_params_ok(self):
-        "Heat up the heating element, which should cause coffee to happen."
-        print("clear_search_params to deactivate")
+        print("clear_search_params to deactivate\n")
+        self.state = "deactivate"
 
     activate.upon(ok, enter=measure, outputs=[activate_ok])
     activate.upon(not_ok, enter=activate, outputs=[])
