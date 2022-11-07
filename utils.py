@@ -3,6 +3,7 @@ import streamlit as st
 import numpy as np
 from constants import frequency_upperband_dict, frequency_lowerband_dict
 
+
 def construct_measurement_dictionary(measurement_data, return_measurement_list=False):
     measurement_list = measurement_data.split(",")
     current_params = ["status", "cell_id", "plmn", "tac", "timing_advance", "current_earfcn",
@@ -107,13 +108,16 @@ def get_kalman_matrices(measurement_sigma=1, dt=1, sigma_a=1):
     return F, H, R, Q
 
 
-
-
-
-
-
 def get_band(earfcn):
     for band in frequency_lowerband_dict:
         if earfcn >= frequency_lowerband_dict[band] and earfcn < frequency_upperband_dict[band]:
             return int(band)
 
+
+def int2onehot(num):
+    if num == 0:
+        return "0"
+    result = "1"
+    for i in range(num - 1):
+        result += "0"
+    return result
