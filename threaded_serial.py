@@ -4,6 +4,7 @@ import serial
 import queue
 import os
 from fsm import Controller
+import json
 
 
 class Serial_Communication:
@@ -52,17 +53,28 @@ class Serial_Communication:
                 message = str(message, 'utf-8')
                 print("Show data:", message)
                 self.command_producer_lock.acquire()
-                self.command = self.evaluate(message, q)
+                self.command, measurement_batch = self.evaluate(message, q)
                 self.command_consumer_lock.release()
-                self.file_reader_writer.write(message)
+                if measurement_batch is not None:
+                    print("Measurement batch", measurement_batch)
+                    self.file_reader_writer.write(measurement_batch)
+
 
     def evaluate(self, response, q):
+        measurement_batch = None
         if response == "OK" and (self.controller.state != "wait_adjusted_measurement_result"
-                                 or self.controller.state != "wait_measurement_result"):
+                                 and self.controller.state != "wait_measurement_result"
+                                 and self.controller.state != "measure"
+                                 and self.controller.state != "adjusted_measure"):
             self.controller.ok()
+        elif response == "OK" and (self.controller.state == "wait_adjusted_measurement_result"
+                                 or self.controller.state == "wait_measurement_result"
+                                 ):
+            return "", measurement_batch
         elif response.find("%NCELLMEAS: 0") >= 0 and (self.controller.state == "wait_adjusted_measurement_result"
                                                       or self.controller.state == "wait_measurement_result"):
-            self.controller.ok(response)
+            measurement_batch = self.controller.ok(response)[0]
+
         elif response.find("%NCELLMEAS: 1") >= 0 and self.controller.state == "wait_adjusted_measurement_result":
             self.controller.ok()
             # while not q.empty:
@@ -73,7 +85,7 @@ class Serial_Communication:
                 print("Emptying queue due to message order mismatch: ", q.get())
             self.controller.not_ok()
         command = self.controller.get_next_command()[0]
-        return command
+        return command, measurement_batch
 
     def initialize(self):
         self.ser = serial.Serial(self.port, 115200, timeout=None)
@@ -104,16 +116,20 @@ class File_Reader_Writer:
         self.consumer_lock.acquire()
         self.filename = filename
 
-    def write(self, message):
+    def write(self, measurement_batch):
         # print(message)
+        self.producer_lock.acquire()
+        with open(self.filename, 'r+') as file:
+            # First we load existing data into a dict.
+            file_data = json.load(file)
+            # Join new_data with file_data inside emp_details
+            file_data["measurements"].append(measurement_batch)
+            # Sets file's current position at offset.
+            file.seek(0)
+            # convert back to json.
+            json.dump(file_data, file, indent=4)
+        self.producer_lock.release()
 
-        if message.find("%NCELLMEAS: 0") >= 0:
-            # print("MEssage:", message)
-            # _, measurement_list = construct_measurement_dictionary(message, return_measurement_list=True)
-            self.producer_lock.acquire()
-            with open(self.filename, "a+") as file:
-                file.write(message + "\n")
-            self.producer_lock.release()
 
     def read(self):
         self.producer_lock.acquire()
