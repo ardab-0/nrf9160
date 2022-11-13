@@ -7,6 +7,9 @@ class Controller():
     def __init__(self):
         self.neighbor_stack = []
         self.state = "activate"
+        self.adjust_search_params_not_ok = False
+        self.last_adjust_search_params_command = ""
+        self.measurement_result_batch = []
 
     @_machine.state(initial=True)
     def activate(self):
@@ -52,6 +55,7 @@ class Controller():
     def not_ok(self):
         "ok command not received in activate state"
 
+
     @_machine.input()
     def get_next_command(self):
         "return next command"
@@ -82,10 +86,18 @@ class Controller():
 
     @_machine.output()
     def get_adjust_search_params_command(self):
+        if self.adjust_search_params_not_ok:
+            self.adjust_search_params_not_ok = False
+            return self.last_adjust_search_params_command
+
         neighbor = self.neighbor_stack.pop(0)
         command = 'AT%XBANDLOCK=2,"{}"'.format(int2onehot(get_band(int(neighbor["n_earfcn"]))))
+        self.last_adjust_search_params_command = command
         return command
 
+    @_machine.output()
+    def adjust_search_params_not_ok(self):
+        self.adjust_search_params_not_ok = True
 
     @_machine.output()
     def save_measurement(self, response):
@@ -93,10 +105,22 @@ class Controller():
             return
         current_measurement_dictionary = construct_measurement_dictionary(response)
         print(current_measurement_dictionary)
+        measurement_result_batch_to_return = self.measurement_result_batch.copy()
+        self.measurement_result_batch.clear()
+        self.measurement_result_batch.append(response)
+
         if "neighbor_cells" in current_measurement_dictionary:
-            self.neighbor_stack = current_measurement_dictionary["neighbor_cells"]
+            found_earfcns = []
+            for neighbor in current_measurement_dictionary["neighbor_cells"]:
+                if neighbor["n_earfcn"] not in found_earfcns:
+                    self.neighbor_stack.append(neighbor)
+                    found_earfcns.append(neighbor["n_earfcn"])
+            self.number_of_measurements_in_batch = len(self.neighbor_stack)
+            print("Neighbor stack: \n", self.neighbor_stack)
         else:
             self.neighbor_stack = []
+
+        return measurement_result_batch_to_return
 
     @_machine.output()
     def change_state_based_on_neighbor_count(self):
@@ -164,13 +188,18 @@ class Controller():
         print("clear_search_params to deactivate\n")
         self.state = "deactivate"
 
+    @_machine.output()
+    def add_to_measurement_batch(self, response):
+        if response is not None:
+            self.measurement_result_batch.append(response)
+
     activate.upon(ok, enter=measure, outputs=[activate_ok])
     activate.upon(not_ok, enter=activate, outputs=[])
     activate.upon(get_next_command, enter=activate, outputs=[get_activate_command])
 
-    measure.upon(ok, enter=wait_measurement_result, outputs=[measure_ok])
-    measure.upon(not_ok, enter=measure, outputs=[])
-    measure.upon(get_next_command, enter=measure, outputs=[get_measure_command])
+    # measure.upon(ok, enter=wait_measurement_result, outputs=[measure_ok])
+    # measure.upon(not_ok, enter=measure, outputs=[])
+    measure.upon(get_next_command, enter=wait_measurement_result, outputs=[get_measure_command, measure_ok])
 
     wait_measurement_result.upon(ok, enter=deactivate, outputs=[save_measurement, wait_measurement_result_ok])
     wait_measurement_result.upon(not_ok, enter=measure, outputs=[])
@@ -197,18 +226,18 @@ class Controller():
     deactivate.upon(get_next_command, enter=deactivate, outputs=[get_deactivate_command])
 
     adjust_search_params.upon(ok, enter=activate_after_adjustment, outputs=[adjust_search_params_ok])
-    adjust_search_params.upon(not_ok, enter=adjust_search_params, outputs=[])
+    adjust_search_params.upon(not_ok, enter=adjust_search_params, outputs=[adjust_search_params_not_ok])
     adjust_search_params.upon(get_next_command, enter=adjust_search_params, outputs=[get_adjust_search_params_command])
 
     activate_after_adjustment.upon(ok, enter=adjusted_measure, outputs=[activate_after_adjustment_ok])
     activate_after_adjustment.upon(not_ok, enter=activate_after_adjustment, outputs=[])
     activate_after_adjustment.upon(get_next_command, enter=activate_after_adjustment, outputs=[get_activate_command])
 
-    adjusted_measure.upon(ok, enter=wait_adjusted_measurement_result, outputs=[adjusted_measure_ok])
-    adjusted_measure.upon(not_ok, enter=adjusted_measure, outputs=[])
-    adjusted_measure.upon(get_next_command, enter=adjusted_measure, outputs=[get_measure_command])
+    # adjusted_measure.upon(ok, enter=wait_adjusted_measurement_result, outputs=[adjusted_measure_ok])
+    # adjusted_measure.upon(not_ok, enter=adjusted_measure, outputs=[])
+    adjusted_measure.upon(get_next_command, enter=wait_adjusted_measurement_result, outputs=[get_measure_command, adjusted_measure_ok])
 
-    wait_adjusted_measurement_result.upon(ok, enter=deactivate, outputs=[wait_adjusted_measurement_result_ok])
+    wait_adjusted_measurement_result.upon(ok, enter=deactivate, outputs=[wait_adjusted_measurement_result_ok, add_to_measurement_batch])
     wait_adjusted_measurement_result.upon(not_ok, enter=adjusted_measure, outputs=[])
     wait_adjusted_measurement_result.upon(get_next_command, enter=wait_adjusted_measurement_result, outputs=[get_empty_command])
 
