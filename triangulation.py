@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 def triangulate(points_np, signal_strengths_np):
     total_strength = np.sum(signal_strengths_np)
     weights = signal_strengths_np / total_strength
@@ -9,6 +8,32 @@ def triangulate(points_np, signal_strengths_np):
     position = np.sum(points_np * weights, axis=1)
     return position
 
+
+# not finished
+def multilateration(s, P):
+    anchor_num = P.shape[1]
+    dimension_num = P.shape[0]
+
+    if dimension_num == 2:
+        A = np.zeros((anchor_num, 3))
+        b = np.zeros((anchor_num, 1))
+
+        for i in range(anchor_num):
+            A[i, :] = np.array([[1, -2 * P[0, i], -2 * P[1, i]]])
+            b[i, :] = np.array([[s[i, :] ** 2 - P[0, i] ** 2 - P[1, i] ** 2]])
+
+        x = np.matmul(np.matmul(np.linalg.inv(np.matmul(A.T, A)), A.T), b)
+        return x
+    elif dimension_num == 3:
+        A = np.zeros((anchor_num, 4))
+        b = np.zeros((anchor_num, 1))
+
+        for i in range(anchor_num):
+            A[i, :] = np.array([[1, -2 * P[0, i], -2 * P[1, i], -2 * P[2, i]]])
+            b[i, :] = np.array([[s[i, :] ** 2 - P[0, i] ** 2 - P[1, i] ** 2 - P[2, i] ** 2]])
+
+        x = np.matmul(np.matmul(np.linalg.inv(np.matmul(A.T, A)), A.T), b)
+        return x
 
 def test_triangulate():
     points = np.array([[1, 7, 1],
