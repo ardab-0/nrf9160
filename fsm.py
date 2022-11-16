@@ -110,7 +110,7 @@ class Controller():
         self.measurement_result_batch.append(response)
 
         if "neighbor_cells" in current_measurement_dictionary:
-            found_earfcns = []
+            found_earfcns = [current_measurement_dictionary["current_earfcn"]]
             for neighbor in current_measurement_dictionary["neighbor_cells"]:
                 if neighbor["n_earfcn"] not in found_earfcns:
                     self.neighbor_stack.append(neighbor)
