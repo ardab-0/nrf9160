@@ -120,23 +120,20 @@ class File_Reader_Writer:
         # print(message)
         self.producer_lock.acquire()
         with open(self.filename, 'r+') as file:
-            # First we load existing data into a dict.
             file_data = json.load(file)
-            # Join new_data with file_data inside emp_details
             file_data["measurements"].append(measurement_batch)
-            # Sets file's current position at offset.
             file.seek(0)
-            # convert back to json.
             json.dump(file_data, file, indent=4)
         self.producer_lock.release()
 
 
-    def read(self):
+    def read(self):#######################################################################################################################################################################
         self.producer_lock.acquire()
-        with open(self.filename) as file:
-            measurement_lines = file.readlines()
+        with open(self.filename, 'r+') as file:
+            file_data = json.load(file)
+            measurements = file_data["measurements"]
         self.producer_lock.release()
-        return measurement_lines
+        return measurements
 
 
 if __name__ == '__main__':
