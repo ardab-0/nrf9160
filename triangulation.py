@@ -1,12 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def triangulate(points_np, signal_strengths_np):
+def triangulate(points_np, signal_strengths_np, sigma_np):
     total_strength = np.sum(signal_strengths_np)
     weights = signal_strengths_np / total_strength
-
+    std = np.sqrt(np.sum(np.square(weights) * sigma_np))
     position = np.sum(points_np * weights, axis=1)
-    return position
+    # position = np.expand_dims(position, axis=1)
+    return position, std
+
 
 
 # not finished
@@ -54,4 +56,4 @@ def test_triangulate():
     plt.show()
 
 
-test_triangulate()
+# test_triangulate()

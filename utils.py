@@ -2,6 +2,8 @@ import pandas as pd
 import streamlit as st
 import numpy as np
 from constants import frequency_upperband_dict, frequency_lowerband_dict
+from geodesic_calculations import get_cartesian_coordinates, get_coordinates
+from triangulation import triangulate
 
 
 def construct_measurement_dictionary(measurement_data, return_measurement_list=False):
@@ -121,3 +123,42 @@ def int2onehot(num):
     for i in range(num - 1):
         result += "0"
     return result
+
+
+# convert to cartesian,
+# get triangulation result
+# convert back to geological coord
+# add measurement time, uncertainty(range), longitude, latitude
+# construct a df, and return it
+def get_moving_path_df_with_combined_measurements(base_station_df, measurements):
+    df = pd.DataFrame()
+    for measurement_batch in measurements:
+        coords_and_rsrp = []
+        for i, measurement in enumerate(measurement_batch):
+            dictionary = construct_measurement_dictionary(measurement)
+
+            res = query_base_station_dataset(base_station_df, dictionary["plmn"],
+                                             dictionary["tac"], dictionary["cell_id"])
+            if not res.empty:
+                el = [res["Longitude"].item(), res["Latitude"].item(), int(dictionary["current_rsrq"]), res["Range"].item(), int(dictionary["measurement_time"])]
+                coords_and_rsrp.append(el)
+        coords_and_rsrp = np.array(coords_and_rsrp)
+        cartesian_coordinates = get_cartesian_coordinates(coords_and_rsrp[:, 0:2])
+
+        triangulated_coords_cartesian = np.zeros((2, 2))
+        triangulated_coords_cartesian[1, :], std = triangulate(cartesian_coordinates.T, coords_and_rsrp[:, 2], coords_and_rsrp[:, 3])
+        orig_coords = np.zeros((2, 2))
+        orig_coords[0, :] = coords_and_rsrp[0, 0:2]
+
+        triangulated_geographic_coords = get_coordinates(triangulated_coords_cartesian,  orig_coords)
+        res =  pd.DataFrame([{
+            'Longitude': triangulated_geographic_coords[1, 0],
+            'Latitude': triangulated_geographic_coords[1, 1],
+            'Std': std,
+            "measurement_time": coords_and_rsrp[0, 4]
+        }])
+        df = pd.concat([df, res])
+
+    return df
+
+
