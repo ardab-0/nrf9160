@@ -162,3 +162,8 @@ def get_moving_path_df_with_combined_measurements(base_station_df, measurements)
     return df
 
 
+def calculate_timing_advance_distance(TA):
+    TS = 1 / 30720000
+    NTA = 16 * TA * TS
+    distance = (3 * 1e8 * NTA) / 2
+    return distance
