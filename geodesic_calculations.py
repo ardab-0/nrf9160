@@ -53,3 +53,28 @@ def get_coordinates(cartesian_coordinates_np, original_coordinates_np):
         i += 1
 
     return coordinates
+
+
+def get_distances_in_cartesian(distances, positions, positions_cartesian_coordinates):
+    average_position_cartesian = np.mean(positions_cartesian_coordinates, axis=0)
+    distances_cartesian = []
+
+    for i, distance in enumerate(distances.T):
+        displacement_cartesian = average_position_cartesian - positions_cartesian_coordinates[i, :]
+        bearing_angle_deg = np.rad2deg(np.arctan2(displacement_cartesian[1], displacement_cartesian[0]))
+
+        center_in_geological = geopy.distance.distance(meters=distance).destination((positions[i, 0], positions[i, 1]), bearing=bearing_angle_deg)
+
+        positions_with_center = np.zeros((positions.shape[0] + 1, positions.shape[1]))
+        positions_with_center[:positions.shape[0], :] = positions
+        positions_with_center[-1, :] = np.array([center_in_geological[0], center_in_geological[1]])
+
+        positions_with_center_cartesian = get_cartesian_coordinates(positions_with_center)
+
+        center_cartesian = positions_with_center_cartesian[-1, :]
+        distance_cartesian = np.linalg.norm(positions_cartesian_coordinates[i, :] - center_cartesian)
+        distances_cartesian.append(distance_cartesian)
+
+    return np.array(distances_cartesian)
+
+
