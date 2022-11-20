@@ -16,13 +16,29 @@ def multilateration(s, P):
     anchor_num = P.shape[1]
     dimension_num = P.shape[0]
 
+    #correction for coordinate system conversion
+    s *= 1.41
+    ###########################################
+
+    #multilateration algorithm doesn't work for 2 anchor positions, average of the anchors is calculated instead
+    if anchor_num == 2:
+        direction_vec = P[:, 1] - P[:, 0]
+        direction_vec /= np.linalg.norm(direction_vec)
+
+        p0 = P[:, 0] + s[0] * direction_vec
+        p1 = P[:, 1] - s[1] * direction_vec
+
+        average_point = (p0 + p1) / 2
+        return np.array([np.linalg.norm(average_point)**2,  average_point[0], average_point[1]])
+
+
     if dimension_num == 2:
         A = np.zeros((anchor_num, 3))
         b = np.zeros((anchor_num, 1))
 
         for i in range(anchor_num):
             A[i, :] = np.array([[1, -2 * P[0, i], -2 * P[1, i]]])
-            b[i, :] = np.array([[s[i, :] ** 2 - P[0, i] ** 2 - P[1, i] ** 2]])
+            b[i, :] = np.array([[s[i] ** 2 - P[0, i] ** 2 - P[1, i] ** 2]])
 
         x = np.matmul(np.matmul(np.linalg.inv(np.matmul(A.T, A)), A.T), b)
         return x
