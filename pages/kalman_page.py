@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pydeck as pdk
 from constants import S_TO_MS
-from threaded_serial import File_Reader_Writer
+
 
 
 dataset_type = st.sidebar.selectbox(
@@ -26,18 +26,15 @@ else:
     raise Exception("Invalid value selected")
 
 base_station_df = load_data("262.csv")
-# moving_measurement_dictionary_list = get_measurement_dictionary_list(measurement)
-# moving_path_df = get_moving_path_df(base_station_df, moving_measurement_dictionary_list)
+moving_measurement_dictionary_list = get_measurement_dictionary_list(measurement)
+moving_path_df = get_moving_path_df(base_station_df, moving_measurement_dictionary_list)
 
-file_reader_writer = File_Reader_Writer("./saved_measurements/measurements.json")
-measurements = file_reader_writer.read()
-moving_path_df = get_moving_path_df_with_combined_measurements(base_station_df, measurements)
-measurements = moving_path_df[["Longitude", "Latitude", "measurement_time", "Std"]].to_numpy()
+measurements = moving_path_df[["Longitude", "Latitude", "measurement_time", "Range"]].to_numpy()
 cartesian_coordinates = get_cartesian_coordinates(measurements[:, 0:2])
 
 x = np.array([[0, 0, 0, 0, 0, 0]], dtype=float).T
 filtered_cartesian_coordinates = np.zeros((len(measurements), 2))
-P = np.eye(6) * moving_path_df["Std"].iloc[0]
+P = np.eye(6) * moving_path_df["Range"].iloc[0]
 prev_time_ms = 0
 
 measurement_uncertainties = np.zeros((len(measurements), 1))
@@ -98,7 +95,7 @@ st.plotly_chart(fig)
 
 # scaling for display
 moving_path_df["filtered_measurement_uncertainties"] *= map_radius_scale
-moving_path_df["Std"] *= map_radius_scale
+moving_path_df["Range"] *= map_radius_scale
 # scaling for display
 
 unfiltered_path_layer = pdk.Layer(
@@ -110,7 +107,7 @@ unfiltered_path_layer = pdk.Layer(
     filled=True,
     line_width_min_pixels=1,
     get_position=["Longitude", "Latitude"],
-    get_radius="Std",
+    get_radius="Range",
     radius_min_pixels=5,
     # radius_max_pixels=60,
     get_fill_color=[252, 136, 3],
@@ -149,18 +146,18 @@ map = st.pydeck_chart(r)
 
 # scaling for display
 moving_path_df["filtered_measurement_uncertainties"] /= map_radius_scale
-moving_path_df["Std"] /= map_radius_scale
+moving_path_df["Range"] /= map_radius_scale
 # scaling for display
 
 st.write("")
 
 trace1 = go.Scatter(x=moving_path_df["measurement_time"] * S_TO_MS, y=moving_path_df["filtered_measurement_uncertainties"], name="filter uncertainty")
-trace2 = go.Scatter(x=moving_path_df["measurement_time"] * S_TO_MS, y=moving_path_df["Std"], name="std of base station")
+trace2 = go.Scatter(x=moving_path_df["measurement_time"] * S_TO_MS, y=moving_path_df["Range"], name="range of base station")
 
 fig = make_subplots()
 fig.add_trace(trace1)
 fig.add_trace(trace2)
 
-fig['layout'].update(title="Uncertainty of Filter and Std of Base Station in Each Time Step", xaxis=dict(title='Measurement Time (s) (difference from modem boot time)'),
-                     yaxis=dict(title='Uncertainty / Std (m)'))
+fig['layout'].update(title="Uncertainty of Filter and Range of Base Station in Each Time Step", xaxis=dict(title='Measurement Time (s) (difference from modem boot time)'),
+                     yaxis=dict(title='Uncertainty / Range (m)'))
 st.plotly_chart(fig)
