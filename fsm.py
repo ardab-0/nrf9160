@@ -47,6 +47,22 @@ class Controller():
     def clear_search_params(self):
         ""
 
+    @_machine.state()
+    def cpsms_before_measure(self):
+        ""
+
+    @_machine.state()
+    def reset_cpsms_before_measure(self):
+        ""
+
+    @_machine.state()
+    def cpsms_before_adjusted_measure(self):
+        ""
+
+    @_machine.state()
+    def reset_cpsms_before_adjusted_measure(self):
+        ""
+
     @_machine.input()
     def ok(self, response=None):
         "ok command received in activate state"
@@ -135,8 +151,8 @@ class Controller():
 
     @_machine.output()
     def activate_ok(self):
-        print("activate to measure\n")
-        self.state = "measure"
+        print("activate to cpsms_before_measure\n")
+        self.state = "cpsms_before_measure"
 
     @_machine.output()
     def measure_ok(self):
@@ -170,8 +186,8 @@ class Controller():
 
     @_machine.output()
     def activate_after_adjustment_ok(self):
-        print("activate_after_adjustment to adjusted_measure\n")
-        self.state = "adjusted_measure"
+        print("activate_after_adjustment to reset_cpsms_before_adjusted_measure\n")
+        self.state = "reset_cpsms_before_adjusted_measure"
 
     @_machine.output()
     def adjusted_measure_ok(self):
@@ -193,9 +209,47 @@ class Controller():
         if response is not None:
             self.measurement_result_batch.append(response)
 
-    activate.upon(ok, enter=measure, outputs=[activate_ok])
+    @_machine.output()
+    def cpsms_before_measure_ok(self):
+        print("cpsms_before_measure to reset_cpsms_before_measure")
+        self.state = "reset_cpsms_before_measure"
+
+    @_machine.output()
+    def get_cpsms_command(self):
+        return 'AT+CPSMS=1'
+
+    @_machine.output()
+    def cpsms_before_adjusted_measure_ok(self):
+        print("cpsms_before_measure to reset_cpsms_before_adjusted_measure")
+        self.state = "reset_cpsms_before_adjusted_measure"
+
+
+    @_machine.output()
+    def get_reset_cpsms_command(self):
+        return "AT+CPSMS="
+
+    @_machine.output()
+    def reset_cpsms_before_measure_ok(self):
+        print("reset_cpsms_before_measure to measure")
+        self.state = "measure"
+
+    @_machine.output()
+    def reset_cpsms_before_adjusted_measure_ok(self):
+        print("reset_cpsms_before_adjusted_measure to adjusted_measure")
+        self.state = "adjusted_measure"
+
+
+    activate.upon(ok, enter=cpsms_before_measure, outputs=[activate_ok])
     activate.upon(not_ok, enter=activate, outputs=[])
     activate.upon(get_next_command, enter=activate, outputs=[get_activate_command])
+
+    cpsms_before_measure.upon(ok, enter=reset_cpsms_before_measure, outputs=[cpsms_before_measure_ok])
+    cpsms_before_measure.upon(not_ok, enter=cpsms_before_measure, outputs=[])
+    cpsms_before_measure.upon(get_next_command, enter=cpsms_before_measure, outputs=[get_cpsms_command])
+
+    reset_cpsms_before_measure.upon(ok, enter=measure, outputs=[reset_cpsms_before_measure_ok])
+    reset_cpsms_before_measure.upon(not_ok, enter=reset_cpsms_before_measure, outputs=[])
+    reset_cpsms_before_measure.upon(get_next_command, enter=reset_cpsms_before_measure, outputs=[get_reset_cpsms_command])
 
     # measure.upon(ok, enter=wait_measurement_result, outputs=[measure_ok])
     # measure.upon(not_ok, enter=measure, outputs=[])
@@ -229,9 +283,18 @@ class Controller():
     adjust_search_params.upon(not_ok, enter=adjust_search_params, outputs=[adjust_search_params_not_ok])
     adjust_search_params.upon(get_next_command, enter=adjust_search_params, outputs=[get_adjust_search_params_command])
 
-    activate_after_adjustment.upon(ok, enter=adjusted_measure, outputs=[activate_after_adjustment_ok])
+    activate_after_adjustment.upon(ok, enter=cpsms_before_adjusted_measure, outputs=[activate_after_adjustment_ok])
     activate_after_adjustment.upon(not_ok, enter=activate_after_adjustment, outputs=[])
     activate_after_adjustment.upon(get_next_command, enter=activate_after_adjustment, outputs=[get_activate_command])
+
+    cpsms_before_adjusted_measure.upon(ok, enter=reset_cpsms_before_adjusted_measure, outputs=[cpsms_before_adjusted_measure_ok])
+    cpsms_before_adjusted_measure.upon(not_ok, enter=cpsms_before_adjusted_measure, outputs=[])
+    cpsms_before_adjusted_measure.upon(get_next_command, enter=cpsms_before_adjusted_measure, outputs=[get_cpsms_command])
+
+    reset_cpsms_before_adjusted_measure.upon(ok, enter=adjusted_measure, outputs=[reset_cpsms_before_adjusted_measure_ok])
+    reset_cpsms_before_adjusted_measure.upon(not_ok, enter=reset_cpsms_before_adjusted_measure, outputs=[])
+    reset_cpsms_before_adjusted_measure.upon(get_next_command, enter=reset_cpsms_before_adjusted_measure,
+                                       outputs=[get_reset_cpsms_command])
 
     # adjusted_measure.upon(ok, enter=wait_adjusted_measurement_result, outputs=[adjusted_measure_ok])
     # adjusted_measure.upon(not_ok, enter=adjusted_measure, outputs=[])
