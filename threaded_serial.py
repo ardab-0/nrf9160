@@ -32,9 +32,9 @@ class Serial_Communication:
 
     def send_measure_command(self, ser, event):
 
-        measurement_period = 1
+        # measurement_period = 5
         while not event.is_set():
-            time.sleep(measurement_period)
+            # time.sleep(measurement_period)
 
             self.command_consumer_lock.acquire()
             if self.command is not None:
@@ -61,6 +61,11 @@ class Serial_Communication:
 
 
     def evaluate(self, response, q):
+        if self.controller.state == "reset_cpsms_before_measure_ok" or self.controller.state == "reset_cpsms_before_measure":
+            time.sleep(10)
+        else:
+            time.sleep(1)
+
         measurement_batch = None
         if response == "OK" and (self.controller.state != "wait_adjusted_measurement_result"
                                  and self.controller.state != "wait_measurement_result"
