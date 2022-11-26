@@ -1,6 +1,8 @@
 from geographiclib.geodesic import Geodesic
 import numpy as np
 import geopy.distance
+from geopy import distance
+
 
 
 def get_distance_and_bearing(point_from, point_to):
@@ -10,9 +12,14 @@ def get_distance_and_bearing(point_from, point_to):
     :param point_to: (latitude, longitude)
     :return: distance(m), bearing (degrees)
     """
+    # distance_meter_geopy = distance.distance(point_from, point_to).meters
     inverse_dict = Geodesic.WGS84.Inverse(point_from[0], point_from[1], point_to[0], point_to[1])
     distance_meter = inverse_dict["s12"]
     bearing_angle_deg = inverse_dict["azi1"]
+
+    # print("Geopy distance: ", distance_meter_geopy)
+    # print("Geodesic distance: ", distance_meter)
+
     return distance_meter, bearing_angle_deg
 
 
