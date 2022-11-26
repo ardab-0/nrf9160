@@ -17,7 +17,7 @@ def multilateration(s, P):
     dimension_num = P.shape[0]
 
     #correction for coordinate system conversion
-    s *= 1.422
+    # s *= 1.38
     ###########################################
 
     #multilateration algorithm doesn't work for 2 anchor positions, average of the anchors is calculated instead
@@ -27,6 +27,8 @@ def multilateration(s, P):
 
         p0 = P[:, 0] + s[0] * direction_vec
         p1 = P[:, 1] - s[1] * direction_vec
+        print(s[1])
+        print("Norm: ", np.linalg.norm(P[:, 1]-p1))
 
         average_point = (p0 + p1) / 2
         return np.array([np.linalg.norm(average_point)**2,  average_point[0], average_point[1]])
@@ -40,7 +42,7 @@ def multilateration(s, P):
             A[i, :] = np.array([[1, -2 * P[0, i], -2 * P[1, i]]])
             b[i, :] = np.array([[s[i] ** 2 - P[0, i] ** 2 - P[1, i] ** 2]])
 
-        x = np.matmul(np.matmul(np.linalg.inv(np.matmul(A.T, A)), A.T), b)
+        x = np.linalg.inv(A.T @ A) @ A.T @ b
         return x
     elif dimension_num == 3:
         A = np.zeros((anchor_num, 4))
@@ -50,7 +52,7 @@ def multilateration(s, P):
             A[i, :] = np.array([[1, -2 * P[0, i], -2 * P[1, i], -2 * P[2, i]]])
             b[i, :] = np.array([[s[i, :] ** 2 - P[0, i] ** 2 - P[1, i] ** 2 - P[2, i] ** 2]])
 
-        x = np.matmul(np.matmul(np.linalg.inv(np.matmul(A.T, A)), A.T), b)
+        x = np.linalg.inv(A.T @ A) @ A.T @ b
         return x
 
 def test_triangulate():
