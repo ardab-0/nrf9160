@@ -14,11 +14,13 @@ from utils import get_kalman_matrices
 from filterpy.kalman import predict, update
 from constants import S_TO_MS
 
-MEASUREMENT_UNCERTAINTY = 78.125
+MEASUREMENT_UNCERTAINTY_STEP = 78.125
 orig_position = {"latitude": 49.480269, "longitude": 10.975543}
 ######################################### Sidebar ###########################################
 
-sigma_a = st.sidebar.slider('Acceleration Standard Deviation (m/s\u00b2)', 0.0, 2.0, 0.15)
+sigma_a = st.sidebar.slider('Acceleration Standard Deviation (m/s\u00b2)', 0.0, 0.5, 0.1, step=0.01)
+MEASUREMENT_UNCERTAINTY = st.sidebar.slider('Measurement Uncertainty (m)', 0.0, 5 * MEASUREMENT_UNCERTAINTY_STEP, MEASUREMENT_UNCERTAINTY_STEP, step = MEASUREMENT_UNCERTAINTY_STEP)
+
 
 ######################################### Sidebar ###########################################
 
@@ -97,7 +99,7 @@ for result_df in query_results:
         res = pd.DataFrame([{
             'longitude': triangulated_geographic_coords[1, 1],  # order is latitude, longitude in geopy
             'latitude': triangulated_geographic_coords[1, 0],  # but order is longitude, latitude in map
-            'std': MEASUREMENT_UNCERTAINTY / np.sqrt(len(result_df)),
+            'std': MEASUREMENT_UNCERTAINTY, #/ np.sqrt(len(result_df)),
             #############################??????????????????????????????????
             'measurement_time': measurement_time
         }])
