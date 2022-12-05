@@ -23,8 +23,7 @@ def multilateration(s, P):
 
         p0 = P[:, 0] + s[0] * direction_vec
         p1 = P[:, 1] - s[1] * direction_vec
-        print(s[1])
-        print("Norm: ", np.linalg.norm(P[:, 1]-p1))
+
 
         average_point = (p0 + p1) / 2
         return np.array([np.linalg.norm(average_point)**2,  average_point[0], average_point[1]])
