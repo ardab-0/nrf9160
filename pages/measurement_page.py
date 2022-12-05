@@ -41,7 +41,10 @@ for measurement_batch in measurements:
                 'distance': calculate_timing_advance_distance(round(int(dictionary["timing_advance"]) / 16))
             }])
             query_result_of_batch_df = pd.concat([query_result_of_batch_df, res])
-    query_results.append(query_result_of_batch_df)
+    if not query_result_of_batch_df.empty:
+        query_results.append(query_result_of_batch_df)
+    else:
+        print("No base station in database in this batch.")
 
 st.write("Database Query Results")
 for result_df in query_results:

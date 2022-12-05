@@ -16,10 +16,6 @@ def multilateration(s, P):
     anchor_num = P.shape[1]
     dimension_num = P.shape[0]
 
-    #correction for coordinate system conversion
-    # s *= 1.38
-    ###########################################
-
     #multilateration algorithm doesn't work for 2 anchor positions, average of the anchors is calculated instead
     if anchor_num == 2:
         direction_vec = P[:, 1] - P[:, 0]

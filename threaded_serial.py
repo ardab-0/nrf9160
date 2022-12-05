@@ -57,7 +57,8 @@ class Serial_Communication:
                 self.command_consumer_lock.release()
                 if measurement_batch is not None:
                     print("Measurement batch", measurement_batch)
-                    self.file_reader_writer.write(measurement_batch)
+                    if len(measurement_batch) > 0:
+                        self.file_reader_writer.write(measurement_batch)
 
 
     def evaluate(self, response, q):
