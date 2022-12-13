@@ -20,7 +20,7 @@ class Serial_Communication:
         self.threads = []
         self.ser = None
         self.file_reader_writer = file_reader_writer
-        self.command = "AT+CFUN=1"
+        self.command = "AT%XBANDLOCK=0"
         self.neighbor_stack = []
         self.controller = Controller()
 
