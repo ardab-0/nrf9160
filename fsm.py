@@ -6,12 +6,12 @@ class Controller():
 
     def __init__(self):
         self.neighbor_stack = []
-        self.state = "activate"
+        self.state = "clear_bandlock"
         self.adjust_search_params_not_ok = False
         self.last_adjust_search_params_command = ""
         self.measurement_result_batch = []
 
-    @_machine.state(initial=True)
+    @_machine.state()
     def activate(self):
         "In this state, modem activation command is sent."
 
@@ -61,6 +61,11 @@ class Controller():
 
     @_machine.state()
     def reset_cpsms_before_adjusted_measure(self):
+        ""
+
+
+    @_machine.state(initial=True)
+    def clear_bandlock(self):
         ""
 
     @_machine.input()
@@ -238,6 +243,19 @@ class Controller():
         print("reset_cpsms_before_adjusted_measure to adjusted_measure")
         self.state = "adjusted_measure"
 
+    @_machine.output()
+    def clear_bandlock_ok(self):
+        print("clear_bandlock to activate")
+        self.state = "activate"
+
+
+    @_machine.output()
+    def get_clear_bandlock_command(self):
+        return "AT%XBANDLOCK=0"
+
+    clear_bandlock.upon(ok, enter=activate, outputs=[clear_bandlock_ok])
+    clear_bandlock.upon(not_ok, enter=clear_bandlock, outputs=[])
+    clear_bandlock.upon(get_next_command, enter=clear_bandlock, outputs=[get_clear_bandlock_command])
 
     activate.upon(ok, enter=cpsms_before_measure, outputs=[activate_ok])
     activate.upon(not_ok, enter=activate, outputs=[])
