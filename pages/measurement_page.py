@@ -1,6 +1,8 @@
+import glob
+
 import streamlit as st
 from threaded_serial import File_Reader_Writer, Serial_Communication
-from utils import construct_measurement_dictionary, query_base_station_dataset, load_data, \
+from utils import construct_measurement_dictionary, get_base_station_data_web, load_data, \
     calculate_timing_advance_distance
 import pandas as pd
 import plotly.graph_objects as go
@@ -15,19 +17,24 @@ from filterpy.kalman import predict, update
 from constants import S_TO_MS
 
 MEASUREMENT_UNCERTAINTY_STEP = 78.125
-orig_position = {"latitude": 49.480269, "longitude": 10.975543}
+# orig_position = {"latitude": 49.480269, "longitude": 10.975543}
+# orig_position = {"latitude": 49.572990, "longitude": 11.026701}
+
+
+measurement_filenames = glob.glob("./saved_measurements/*.json")
 ######################################### Sidebar ###########################################
 
-sigma_a = st.sidebar.slider('Acceleration Standard Deviation (m/s\u00b2)', 0.0, 0.5, 0.1, step=0.01)
-MEASUREMENT_UNCERTAINTY = st.sidebar.slider('Measurement Uncertainty (m)', 0.0, 5 * MEASUREMENT_UNCERTAINTY_STEP, MEASUREMENT_UNCERTAINTY_STEP, step = MEASUREMENT_UNCERTAINTY_STEP)
-
+sigma_a = st.sidebar.slider('Acceleration Standard Deviation (m/s\u00b2)', 0.0, 0.5, 0.01, step=0.01)
+measurement_uncertainty = st.sidebar.slider('Measurement Uncertainty (m)', 0.0, 5 * MEASUREMENT_UNCERTAINTY_STEP,
+                                            3 * MEASUREMENT_UNCERTAINTY_STEP, step=MEASUREMENT_UNCERTAINTY_STEP)
+measurement_filename = st.sidebar.selectbox("Select file to load", measurement_filenames)
 
 ######################################### Sidebar ###########################################
 
 base_station_df = load_data("./262.csv")
 
-file_reader_writer = File_Reader_Writer("./saved_measurements/measurements.json")
-measurements = file_reader_writer.read()
+file_reader_writer = File_Reader_Writer(measurement_filename)
+measurements, orig_position = file_reader_writer.read(get_orig_pos=True)
 
 query_results = []
 
@@ -36,7 +43,7 @@ for measurement_batch in measurements:
     for i, measurement in enumerate(measurement_batch):
         dictionary = construct_measurement_dictionary(measurement)
 
-        res = query_base_station_dataset(base_station_df, dictionary["plmn"],
+        res = get_base_station_data_web(dictionary["plmn"],
                                          dictionary["tac"], dictionary["cell_id"])
         if not res.empty and not dictionary["timing_advance"] == "65535":  # 65535 means timing advance is invalid
             res = pd.DataFrame([{
@@ -80,7 +87,7 @@ for result_df in query_results:
         res = pd.DataFrame([{
             'longitude': positions[0, 1],  # order is latitude, longitude in geopy
             'latitude': positions[0, 0],  # but order is longitude, latitude in map
-            'std': result_df.iloc[0]["distance"] + MEASUREMENT_UNCERTAINTY,
+            'std': result_df.iloc[0]["distance"] + measurement_uncertainty,
             'measurement_time': measurement_time
         }])
     else:
@@ -99,7 +106,7 @@ for result_df in query_results:
         res = pd.DataFrame([{
             'longitude': triangulated_geographic_coords[1, 1],  # order is latitude, longitude in geopy
             'latitude': triangulated_geographic_coords[1, 0],  # but order is longitude, latitude in map
-            'std': MEASUREMENT_UNCERTAINTY, #/ np.sqrt(len(result_df)),
+            'std': measurement_uncertainty,  # / np.sqrt(len(result_df)),
             #############################??????????????????????????????????
             'measurement_time': measurement_time
         }])
@@ -159,8 +166,6 @@ filtered_selected_time_df = filtered_multilateration_result_df.iloc[index_of_sel
 
 selected_base_stations_df = query_results[index_of_selected_estimation_result]
 
-
-
 original_position_layer = pdk.Layer(
     "ScatterplotLayer",
     data=pd.DataFrame(orig_position, index=[0]),
@@ -179,12 +184,11 @@ original_position_layer = pdk.Layer(
     tooltip="test test",
 )
 
-
 estimation_layer = pdk.Layer(
     "ScatterplotLayer",
     data=selected_time_df,
     pickable=False,
-    opacity=0.2,
+    opacity=0.1,
     stroked=True,
     filled=True,
     line_width_min_pixels=1,
@@ -202,7 +206,7 @@ filtered_estimation_layer = pdk.Layer(
     "ScatterplotLayer",
     data=filtered_selected_time_df,
     pickable=False,
-    opacity=0.3,
+    opacity=0.1,
     stroked=True,
     filled=True,
     line_width_min_pixels=1,
@@ -220,16 +224,15 @@ base_station_layer = pdk.Layer(
     "ScatterplotLayer",
     data=selected_base_stations_df,
     pickable=False,
-    opacity=0.2,
+    opacity=0.05,
     stroked=True,
-    filled=True,
+    filled=False,
     line_width_min_pixels=1,
     get_position=["longitude", "latitude"],
     get_radius="distance",
     radius_min_pixels=5,
     radiusScale=1,
     # radius_max_pixels=60,
-    get_fill_color=[3, 136, 252],
     get_line_color=[0, 0, 255],
     tooltip="test test",
 )
@@ -262,7 +265,7 @@ fig['layout'].update(title="Uncertainty of Filter and Uncertainty of Measurement
                      xaxis=dict(title='Measurement Time (s) (difference from modem boot time)'),
                      yaxis=dict(title='Uncertainty / Range (m)'))
 st.plotly_chart(fig)
-
+####################### Uncertainty Graph #################################
 
 
 ###################### Difference to Original Position #########################
@@ -271,13 +274,13 @@ filtered_distances = np.zeros(len(filtered_multilateration_result_df))
 
 for i, row in multilateration_result_df.iterrows():
     filtered_row = filtered_multilateration_result_df.iloc[i]
-    unfiltered_distance, _ = get_distance_and_bearing((orig_position["latitude"], orig_position["longitude"]), (row["latitude"], row["longitude"]))
-    filtered_distance, _ = get_distance_and_bearing((orig_position["latitude"], orig_position["longitude"]), (filtered_row["latitude"], filtered_row["longitude"]))
+    unfiltered_distance, _ = get_distance_and_bearing((orig_position["latitude"], orig_position["longitude"]),
+                                                      (row["latitude"], row["longitude"]))
+    filtered_distance, _ = get_distance_and_bearing((orig_position["latitude"], orig_position["longitude"]),
+                                                    (filtered_row["latitude"], filtered_row["longitude"]))
 
     unfiltered_distances[i] = unfiltered_distance
     filtered_distances[i] = filtered_distance
-
-
 
 trace1 = go.Scatter(x=filtered_multilateration_result_df["measurement_time"] * S_TO_MS,
                     y=filtered_distances, name="filtered distance")
@@ -290,5 +293,6 @@ fig.add_trace(trace2)
 
 fig['layout'].update(title="Distance to Original Position in Each Time Step",
                      xaxis=dict(title='Measurement Time (s) (difference from modem boot time)'),
-                     yaxis=dict(title='Uncertainty / Range (m)'))
+                     yaxis=dict(title='Difference (m)'))
 st.plotly_chart(fig)
+###################### Difference to Original Position #########################
