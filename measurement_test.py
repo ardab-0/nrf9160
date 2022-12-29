@@ -5,7 +5,7 @@ import streamlit as st
 from datetime import datetime
 from threaded_serial import File_Reader_Writer, Serial_Communication
 
-file_reader_writer = File_Reader_Writer("./saved_measurements/measurements.json")
+file_reader_writer = File_Reader_Writer("./saved_measurements/measurements_erlangen.json")
 ser_com = Serial_Communication("COM4", file_reader_writer)
 ser_com.initialize()
 time.sleep(3000)

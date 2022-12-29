@@ -133,12 +133,15 @@ class File_Reader_Writer:
         self.producer_lock.release()
 
 
-    def read(self):#######################################################################################################################################################################
+    def read(self, get_orig_pos=False):#######################################################################################################################################################################
         self.producer_lock.acquire()
         with open(self.filename, 'r+') as file:
             file_data = json.load(file)
             measurements = file_data["measurements"]
+            orig_position = file_data["orig_position"]
         self.producer_lock.release()
+        if get_orig_pos:
+            return measurements, orig_position
         return measurements
 
 

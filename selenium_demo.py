@@ -7,9 +7,6 @@ import time
 from selenium.webdriver.firefox.options import Options
 
 
-
-
-
 class WebCrawler:
     def __init__(self):
         options = Options()
@@ -36,15 +33,22 @@ class WebCrawler:
         page_source = self.driver.page_source
         start_idx = page_source.find("location is")
         end_idx = page_source.find("Accuracy", start_idx)
-        position = page_source[start_idx + 13: end_idx - 2]
-        position = position.split(",")
-        position_tuple = (float(position[0]) , float(position[1]))
-        return position_tuple
+        accuracy_end_idx = page_source.find("m", end_idx)
+        if start_idx >= 0 and end_idx >= 0:
+            position = page_source[start_idx + 13: end_idx - 2]
+            position = position.split(",")
+            position_tuple = (float(position[0]), float(position[1]))
+
+            acc = page_source[end_idx+9: accuracy_end_idx-1]
+
+        else:
+            return None
+        return position_tuple, acc
 
 
-crawler = WebCrawler()
-form_details = [262, 1, 22549, 44414465]
-print(crawler.get_location_from_page(form_details))
-
-form_details = [262, 1, 22549, 46791175]
-print(crawler.get_location_from_page(form_details))
+# crawler = WebCrawler()
+# form_details = [262, 1, 22549, 44414465]
+# print(crawler.get_location_from_page(form_details))
+#
+# form_details = [262, 1, 22549, 46791175]
+# print(crawler.get_location_from_page(form_details))
