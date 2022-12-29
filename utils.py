@@ -4,6 +4,8 @@ import numpy as np
 from constants import frequency_upperband_dict, frequency_lowerband_dict
 from geodesic_calculations import get_cartesian_coordinates, get_coordinates
 from triangulation import triangulate
+from selenium_demo import WebCrawler
+import os
 
 
 def construct_measurement_dictionary(measurement_data, return_measurement_list=False):
@@ -73,6 +75,53 @@ def query_base_station_dataset(df, plmn, tac, cell_id):
     return query_results.head(1)
 
 
+def get_base_station_data_web(plmn, tac, cell_id):
+    plmn_int = int(plmn)
+    tac_decimal = int(tac, 16)
+    cell_id_decimal = int(cell_id, 16)
+    mcc = 0
+    mnc = 0
+
+    if len(plmn) == 6:
+        mcc = int(plmn_int / 1000)
+        mnc = plmn_int % 1000
+    elif len(plmn) == 5:
+        mcc = int(plmn_int / 100)
+        mnc = plmn_int % 100
+    file_path = "saved_measurements/base-station-cache.csv"
+    if os.path.exists(file_path):
+        df = pd.read_csv(file_path)
+    else:
+        df = pd.DataFrame(columns = ["MCC", "MNC", "TAC", "CID", "Longitude", "Latitude", "Range"])
+        df.to_csv(file_path, index=False)
+
+    if len(df.loc[
+               (df["MCC"] == mcc) & (df["MNC"] == mnc) & (df["TAC"] == tac_decimal) & (
+                       df["CID"] == cell_id_decimal)]) > 0:
+        query_results = df.loc[
+            (df["MCC"] == mcc) & (df["MNC"] == mnc) & (df["TAC"] == tac_decimal) & (
+                    df["CID"] == cell_id_decimal)]
+
+        return query_results
+
+    crawler = WebCrawler()
+    form_details = [mcc, mnc, tac_decimal, cell_id_decimal]
+    query_results = crawler.get_location_from_page(form_details)
+    query_results_dict = {"MCC": [mcc],
+                          "MNC": [mnc],
+                          "TAC": [tac_decimal],
+                          "CID": [cell_id_decimal],
+                          "Longitude": [query_results[0][1]],
+                          "Latitude": [query_results[0][0]],
+                          "Range": [query_results[1]]}
+
+    query_results_df = pd.DataFrame.from_dict(query_results_dict)
+    df = pd.concat([df, query_results_df])
+    df.to_csv(file_path, index=False)
+
+    return query_results_df
+
+
 def get_moving_path_df(base_station_df, moving_measurement_dictionary_list):
     df = pd.DataFrame()
     for dictionary in moving_measurement_dictionary_list:
@@ -140,18 +189,20 @@ def get_moving_path_df_with_combined_measurements(base_station_df, measurements)
             res = query_base_station_dataset(base_station_df, dictionary["plmn"],
                                              dictionary["tac"], dictionary["cell_id"])
             if not res.empty:
-                el = [res["Longitude"].item(), res["Latitude"].item(), int(dictionary["current_rsrq"]), res["Range"].item(), int(dictionary["measurement_time"])]
+                el = [res["Longitude"].item(), res["Latitude"].item(), int(dictionary["current_rsrq"]),
+                      res["Range"].item(), int(dictionary["measurement_time"])]
                 coords_and_rsrp.append(el)
         coords_and_rsrp = np.array(coords_and_rsrp)
         cartesian_coordinates = get_cartesian_coordinates(coords_and_rsrp[:, 0:2])
 
         triangulated_coords_cartesian = np.zeros((2, 2))
-        triangulated_coords_cartesian[1, :], std = triangulate(cartesian_coordinates.T, coords_and_rsrp[:, 2], coords_and_rsrp[:, 3])
+        triangulated_coords_cartesian[1, :], std = triangulate(cartesian_coordinates.T, coords_and_rsrp[:, 2],
+                                                               coords_and_rsrp[:, 3])
         orig_coords = np.zeros((2, 2))
         orig_coords[0, :] = coords_and_rsrp[0, 0:2]
 
-        triangulated_geographic_coords = get_coordinates(triangulated_coords_cartesian,  orig_coords)
-        res =  pd.DataFrame([{
+        triangulated_geographic_coords = get_coordinates(triangulated_coords_cartesian, orig_coords)
+        res = pd.DataFrame([{
             'Longitude': triangulated_geographic_coords[1, 0],
             'Latitude': triangulated_geographic_coords[1, 1],
             'Std': std,
