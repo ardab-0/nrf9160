@@ -3,7 +3,7 @@ import glob
 import streamlit as st
 from threaded_serial import File_Reader_Writer, Serial_Communication
 from utils import construct_measurement_dictionary, get_base_station_data_web, load_data, \
-    calculate_timing_advance_distance
+    calculate_timing_advance_distance, query_base_station_dataset
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -25,9 +25,11 @@ measurement_filenames = glob.glob("./saved_measurements/*.json")
 ######################################### Sidebar ###########################################
 
 sigma_a = st.sidebar.slider('Acceleration Standard Deviation (m/s\u00b2)', 0.0, 0.5, 0.01, step=0.01)
-measurement_uncertainty = st.sidebar.slider('Measurement Uncertainty (m)', 0.0, 5 * MEASUREMENT_UNCERTAINTY_STEP,
+measurement_uncertainty = st.sidebar.slider('Measurement Uncertainty (m)', MEASUREMENT_UNCERTAINTY_STEP, 5 * MEASUREMENT_UNCERTAINTY_STEP,
                                             3 * MEASUREMENT_UNCERTAINTY_STEP, step=MEASUREMENT_UNCERTAINTY_STEP)
 measurement_filename = st.sidebar.selectbox("Select file to load", measurement_filenames)
+
+db_type = st.sidebar.radio("Database type", ('Online', 'Offline'))
 
 ######################################### Sidebar ###########################################
 
@@ -43,8 +45,12 @@ for measurement_batch in measurements:
     for i, measurement in enumerate(measurement_batch):
         dictionary = construct_measurement_dictionary(measurement)
 
-        res = get_base_station_data_web(dictionary["plmn"],
+        if db_type == "Online":
+            res = get_base_station_data_web(dictionary["plmn"],
                                          dictionary["tac"], dictionary["cell_id"])
+        else:
+            res = query_base_station_dataset(base_station_df, dictionary["plmn"],
+                                            dictionary["tac"], dictionary["cell_id"])
         if not res.empty and not dictionary["timing_advance"] == "65535":  # 65535 means timing advance is invalid
             res = pd.DataFrame([{
                 'longitude': res["Longitude"].item(),
@@ -224,7 +230,7 @@ base_station_layer = pdk.Layer(
     "ScatterplotLayer",
     data=selected_base_stations_df,
     pickable=False,
-    opacity=0.05,
+    opacity=0.8,
     stroked=True,
     filled=False,
     line_width_min_pixels=1,
@@ -237,10 +243,27 @@ base_station_layer = pdk.Layer(
     tooltip="test test",
 )
 
+base_station_layer_center = pdk.Layer(
+    "ScatterplotLayer",
+    data=selected_base_stations_df,
+    pickable=False,
+    opacity=1,
+    stroked=True,
+    filled=True,
+    line_width_min_pixels=1,
+    get_position=["longitude", "latitude"],
+    get_radius=10,
+    radius_min_pixels=5,
+    radiusScale=1,
+    # radius_max_pixels=60,
+    get_line_color=[0, 0, 255],
+    tooltip="test test",
+)
+
 view = pdk.ViewState(latitude=49.5, longitude=11, zoom=10, )
 # Create the deck.gl map
 r = pdk.Deck(
-    layers=[base_station_layer, estimation_layer, filtered_estimation_layer, original_position_layer],
+    layers=[base_station_layer,base_station_layer_center, estimation_layer, filtered_estimation_layer, original_position_layer],
     initial_view_state=view,
     map_style="mapbox://styles/mapbox/light-v10",
 )
