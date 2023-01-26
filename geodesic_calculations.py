@@ -61,6 +61,11 @@ def get_coordinates(cartesian_coordinates_np, original_coordinates_np):
 
     return coordinates
 
+def point_at(source_point, distance_meter, angle_deg):
+    next_point = geopy.distance.distance(meters=distance_meter).destination(source_point,
+                                                                    bearing=angle_deg)
+    return next_point
+
 
 def get_distances_in_cartesian(distances, positions, positions_cartesian_coordinates):
     average_position_cartesian = np.mean(positions_cartesian_coordinates, axis=0)
