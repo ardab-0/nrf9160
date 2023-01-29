@@ -62,4 +62,4 @@ for i, measurement_batch in enumerate(measurements):
     measurement_data_np[i, -1] = float(coordinates[1])
 
 measurement_data_df = pd.DataFrame(measurement_data_np, columns=column_labels)
-measurement_data_df.to_csv(dataset_filename)
+measurement_data_df.to_csv(dataset_filename, index=False)

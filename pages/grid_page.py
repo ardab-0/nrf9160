@@ -2,11 +2,14 @@ import numpy as np
 import streamlit as st
 import pydeck as pdk
 import pandas as pd
-
+from nn.data_augmentation import one_to_many_augmenter
 from geodesic_calculations import point_at
 
 dataset_filename = "./saved_measurements/erlangen_dataset.csv"
-df = pd.read_csv(dataset_filename)
+df = pd.read_csv(dataset_filename).iloc[:100]
+
+df = one_to_many_augmenter(df, distance_m=3, k=4)
+
 st.write(df)
 
 lon = 11.02860602
@@ -101,7 +104,7 @@ def save(df, filename, extension="csv"):
         else:
             label_filename += "_label." + el
     print(label_filename)
-    df.to_csv(label_filename)
+    df.to_csv(label_filename, index=False)
 ################################# Sliders ############################################################
 
 grid_length = st.sidebar.slider('Grid Length', 0, 1000, 100, step=10)

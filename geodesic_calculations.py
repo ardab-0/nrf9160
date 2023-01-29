@@ -62,6 +62,13 @@ def get_coordinates(cartesian_coordinates_np, original_coordinates_np):
     return coordinates
 
 def point_at(source_point, distance_meter, angle_deg):
+    """
+
+        :param source_point: (latitude, longitude)
+        :param distance_meter: m
+        :param angle_deg: degree
+        :return: destination_point: (latitude, longitude)
+        """
     next_point = geopy.distance.distance(meters=distance_meter).destination(source_point,
                                                                     bearing=angle_deg)
     return next_point
