@@ -1,3 +1,4 @@
+import numpy as np
 import streamlit as st
 import pydeck as pdk
 import pandas as pd
@@ -25,14 +26,14 @@ def calculate_grid(tl_lon, tl_lat, tr_lon, tr_lat, bl_lon, bl_lat, grid_length_m
     vertical_steps_left = []
     horizontal_steps_bottom = []
     vertical_steps_right = []
-    for i in range(cols):
+    for i in range(cols + 1):
         point_top = point_at((tl_lat, tl_lon), i * grid_length_meter, bearing_angle_deg)
         horizontal_steps_top.append((point_top[1], point_top[0]))
 
         point_bottom = point_at((bl_lat, bl_lon), i * grid_length_meter, bearing_angle_deg)
         horizontal_steps_bottom.append((point_bottom[1], point_bottom[0]))
 
-    for i in range(rows):
+    for i in range(rows + 1):
         point_left = point_at((tl_lat, tl_lon), i * grid_length_meter, bearing_angle_deg + 90)
         vertical_steps_left.append((point_left[1], point_left[0]))
 
@@ -40,6 +41,7 @@ def calculate_grid(tl_lon, tl_lat, tr_lon, tr_lat, bl_lon, bl_lat, grid_length_m
         vertical_steps_right.append((point_right[1], point_right[0]))
 
     return horizontal_steps_top, vertical_steps_left, horizontal_steps_bottom, vertical_steps_right
+
 
 def calculate_grid_lines(horizontal_steps_top, vertical_steps_left, horizontal_steps_bottom, vertical_steps_right):
     lines = []
@@ -50,9 +52,56 @@ def calculate_grid_lines(horizontal_steps_top, vertical_steps_left, horizontal_s
     for i in range(len(vertical_steps_left)):
         lines.append({"start": vertical_steps_left[i], "end": vertical_steps_right[i]})
 
-    return lines
+    return lines, len(horizontal_steps_top) - 1, len(
+        vertical_steps_left) - 1  # coordinate number is 1 more than the grid element number
 
 
+def find_grid_index(lon, lat, grid_lines, cols, rows):
+    row = -1
+    col = -1
+    is_any_inside_grid = False
+
+    i = 0
+    j = 0
+    while i < cols:
+        if (lon > grid_lines[i]["start"][0] and lon <= grid_lines[i + 1]["start"][0]):
+            col = i
+        i += 1
+
+    while j < rows:
+        if (lat < grid_lines[cols + 1 + j]["start"][1] and lat >= grid_lines[cols + 1 + j + 1]["start"][1]):
+            row = j
+        j += 1
+
+    # if col == -1 or row == -1:
+    #     col = -1
+    #     row = -1
+
+    return col, row
+
+
+def divide_samples(dataset_df, grid_lines, cols, rows):
+    sample_positions_on_grid = np.zeros((len(dataset_df), 3), dtype=int)
+
+    for index, row in dataset_df.iterrows():
+        col, row = find_grid_index(row['longitude'], row['latitude'], grid_lines, cols, rows)
+        # sample_positions_on_grid[index, 0] = -1 if (row == -1 or col) else row * cols + col
+        sample_positions_on_grid[index, 0] = row
+        sample_positions_on_grid[index, 1] = col
+        sample_positions_on_grid[index, 2] = -1 if (row == -1 or col == -1) else row * cols + col
+    return pd.DataFrame(sample_positions_on_grid, columns=["row", "col", "idx"])
+
+
+def save(df, filename, extension="csv"):
+    filename_list = filename.split(".")
+    label_filename = "."
+    for el in filename_list:
+        if el != extension:
+            label_filename += el
+        else:
+            label_filename += "_label." + el
+    print(label_filename)
+    df.to_csv(label_filename)
 ################################# Sliders ############################################################
 
 grid_length = st.sidebar.slider('Grid Length', 0, 1000, 100, step=10)
@@ -65,7 +114,6 @@ l_length = st.sidebar.slider('Left Edge', 0, 10000, grid_length, step=grid_lengt
 bearing_angle_deg = st.sidebar.slider('Bearing Angle Degree', -180., 180., 90., step=0.01)
 
 ######################################################################################################
-
 
 
 tr = point_at((tl_lat, tl_lon), t_length, bearing_angle_deg)
@@ -82,12 +130,29 @@ lines = [{"start": [tl_lon, tl_lat], "end": [tr_lon, tr_lat]},
          {"start": [br_lon, br_lat], "end": [bl_lon, bl_lat]},
          {"start": [bl_lon, bl_lat], "end": [tl_lon, tl_lat]}]
 
+horizontal_steps_top, vertical_steps_left, horizontal_steps_bottom, vertical_steps_right = calculate_grid(tl_lon,
+                                                                                                          tl_lat,
+                                                                                                          tr_lon,
+                                                                                                          tr_lat,
+                                                                                                          bl_lon,
+                                                                                                          bl_lat,
+                                                                                                          grid_length,
+                                                                                                          t_length,
+                                                                                                          l_length,
+                                                                                                          bearing_angle_deg)
 
-horizontal_steps_top, vertical_steps_left, horizontal_steps_bottom, vertical_steps_right = calculate_grid(tl_lon, tl_lat, tr_lon, tr_lat, bl_lon, bl_lat, grid_length, t_length, l_length,
-                   bearing_angle_deg)
+grid_lines, cols, rows = calculate_grid_lines(horizontal_steps_top, vertical_steps_left, horizontal_steps_bottom,
+                                              vertical_steps_right)
+st.write(grid_lines)
 
-grid_lines = calculate_grid_lines(horizontal_steps_top, vertical_steps_left, horizontal_steps_bottom, vertical_steps_right)
+grid_pos_idx_df = divide_samples(df, grid_lines, cols, rows)
+st.write(grid_pos_idx_df)
+if -1 in grid_pos_idx_df["idx"].values:
+    st.write("Not all  points are inside grid")
 
+
+if st.sidebar.button("Save label df"):
+    save(grid_pos_idx_df, dataset_filename, extension="csv")
 
 
 gps_positions = pdk.Layer(
@@ -117,7 +182,6 @@ outer_line_layer = pdk.Layer(
     get_color=[0, 0, 255],
     pickable=False,
 )
-
 
 grid_line_layer = pdk.Layer(
     "LineLayer",
