@@ -107,6 +107,9 @@ def get_base_station_data_web(plmn, tac, cell_id):
     crawler = WebCrawler()
     form_details = [mcc, mnc, tac_decimal, cell_id_decimal]
     query_results = crawler.get_location_from_page(form_details)
+    if query_results is None:
+        print("Crawler couldn't find the cell.")
+        return pd.DataFrame()
     query_results_dict = {"MCC": [mcc],
                           "MNC": [mnc],
                           "TAC": [tac_decimal],

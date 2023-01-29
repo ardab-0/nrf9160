@@ -57,11 +57,9 @@ for i, measurement_batch in enumerate(measurements):
                                                               neighbor["n_rsrp"],
                                                               neighbor["n_rsrq"]])
 
-    coordinates = coordinate_list[i].split(",")
+    coordinates = coordinate_list[time_idx].split(",")
     measurement_data_np[i, -2] = float(coordinates[0])
     measurement_data_np[i, -1] = float(coordinates[1])
 
 measurement_data_df = pd.DataFrame(measurement_data_np, columns=column_labels)
 measurement_data_df.to_csv(dataset_filename)
-
-print("hi")
