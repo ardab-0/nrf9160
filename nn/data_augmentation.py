@@ -8,7 +8,6 @@ def one_to_many_augmenter(df, distance_m, k):
     augmentation_np = np.zeros((len(df)*k, len(df.iloc[0])))
 
     for index, row in df.iterrows():
-        print(index)
         lat = row["latitude"]
         lon = row["longitude"]
         for i in range(k):
