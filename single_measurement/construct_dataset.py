@@ -3,17 +3,16 @@ import pandas as pd
 import numpy as np
 from utils import construct_measurement_dictionary
 
-measurement_filename = "../saved_measurements/measurements_erlangen_walking.json"
-coordinate_filename = "../saved_measurements/20230124-145846 - Erlangen moving.kml"
-dataset_filename = "../saved_measurements/erlangen_dataset.csv"
-
+measurement_filename = "../saved_measurements/erlnagen_moving_test.json"
+coordinate_filename = "../saved_measurements/20230124-155653 - Erlangen_test.kml"
+dataset_filename = "../saved_measurements/erlangen_test_dataset.csv"
 
 file_reader_writer = File_Reader_Writer(measurement_filename)
 measurements, orig_position = file_reader_writer.read(get_orig_pos=True)
 
-
-# "current_phys_cell_id", "current_rsrp", "current_rsrq", "measurement_time"
-# "n_phys_cell_id", "n_rsrp", "n_rsrq"
+main_base_station_columns = ["current_phys_cell_id", "current_rsrp", "current_rsrq"]
+neighbor_base_station_columns = ["n_phys_cell_id", "n_rsrp", "n_rsrq"]
+lat_lon = 2
 
 max_neighbor_count = 0
 for measurement_batch in measurements:
@@ -22,40 +21,40 @@ for measurement_batch in measurements:
     if "neighbor_cells" in dictionary and len(dictionary["neighbor_cells"]) > max_neighbor_count:
         max_neighbor_count = len(dictionary["neighbor_cells"])
 
-measurement_data_np = np.zeros((len(measurements), 4+max_neighbor_count*3 + 2 ))
-column_labels = ["current_phys_cell_id", "current_rsrp", "current_rsrq", "measurement_time"]
+measurement_data_np = np.zeros((len(measurements), len(main_base_station_columns) + max_neighbor_count * len(
+    neighbor_base_station_columns) + lat_lon))
+column_labels = ["current_phys_cell_id", "current_rsrp", "current_rsrq"]
 for i in range(max_neighbor_count):
-    column_labels.append(str(i+1)+"_phys_cell_id")
+    column_labels.append(str(i + 1) + "_phys_cell_id")
     column_labels.append(str(i + 1) + "_rsrp")
-    column_labels.append(str(i + 1) + "n_rsrq")
+    column_labels.append(str(i + 1) + "_rsrq")
 
 column_labels.append("longitude")
 column_labels.append("latitude")
-
 
 with open(coordinate_filename, "r") as file1:
     file_content = file1.read()
     start = file_content.find("<coordinates>")
     end = file_content.find("</coordinates>")
-    coordinate_text = file_content[start+14:end]
+    coordinate_text = file_content[start + 14:end]
     coordinate_list = coordinate_text.split("\n")
-
 
 for i, measurement_batch in enumerate(measurements):
     measurement = measurement_batch[0]
     dictionary = construct_measurement_dictionary(measurement)
 
-    time_idx = int(round(int(dictionary["measurement_time"])/1000))
-    measurement_data_np[i, :4] = np.array([dictionary["current_phys_cell_id"],
-                                          dictionary["current_rsrp"],
-                                          dictionary["current_rsrq"],
-                                          time_idx
-                                          ])
+    time_idx = int(round(int(dictionary["measurement_time"]) / 1000))
+    measurement_data_np[i, :3] = np.array([dictionary["current_phys_cell_id"],
+                                           dictionary["current_rsrp"],
+                                           dictionary["current_rsrq"]
+                                           ])
     if "neighbor_cells" in dictionary:
         for j, neighbor in enumerate(dictionary["neighbor_cells"]):
-            measurement_data_np[i, 4+3*j:4+3*j+3] = np.array([neighbor["n_phys_cell_id"],
-                                                              neighbor["n_rsrp"],
-                                                              neighbor["n_rsrq"]])
+            measurement_data_np[i, len(main_base_station_columns) + len(neighbor_base_station_columns) * j:len(
+                main_base_station_columns) + len(neighbor_base_station_columns) * j + len(
+                neighbor_base_station_columns)] = np.array([neighbor["n_phys_cell_id"],
+                                                            neighbor["n_rsrp"],
+                                                            neighbor["n_rsrq"]])
 
     coordinates = coordinate_list[time_idx].split(",")
     measurement_data_np[i, -2] = float(coordinates[0])

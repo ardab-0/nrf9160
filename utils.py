@@ -4,7 +4,7 @@ import numpy as np
 from constants import frequency_upperband_dict, frequency_lowerband_dict
 from geodesic_calculations import get_cartesian_coordinates, get_coordinates
 from triangulation import triangulate
-from selenium_demo import WebCrawler
+from web_crawler import WebCrawler
 import os
 
 

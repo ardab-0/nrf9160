@@ -5,10 +5,10 @@ import pandas as pd
 from nn.data_augmentation import one_to_many_augmenter
 from geodesic_calculations import point_at
 
-dataset_filename = "./saved_measurements/erlangen_dataset.csv"
+dataset_filename = "./saved_measurements/erlangen_test_dataset.csv"
 df = pd.read_csv(dataset_filename)
 
-df = one_to_many_augmenter(df, distance_m=3, k=4)
+df = one_to_many_augmenter(df, distance_m=3, k=8)
 
 st.write(df)
 
@@ -95,16 +95,21 @@ def divide_samples(dataset_df, grid_lines, cols, rows):
     return pd.DataFrame(sample_positions_on_grid, columns=["row", "col", "idx"])
 
 
-def save(df, filename, extension="csv"):
+def save(label_df, augmented_df, filename, extension="csv"):
     filename_list = filename.split(".")
     label_filename = "."
+    augmented_filename = "."
     for el in filename_list:
         if el != extension:
             label_filename += el
+            augmented_filename += el
         else:
-            label_filename += "_label." + el
+            label_filename += "_200_label." + el
+            augmented_filename += "_200_augmented." + el
     print(label_filename)
-    df.to_csv(label_filename, index=False)
+    label_df.to_csv(label_filename, index=False)
+    augmented_df.to_csv(augmented_filename, index=False)
+
 ################################# Sliders ############################################################
 
 grid_length = st.sidebar.slider('Grid Length', 0, 1000, 100, step=10)
@@ -155,7 +160,7 @@ if -1 in grid_pos_idx_df["idx"].values:
 
 
 if st.sidebar.button("Save label df"):
-    save(grid_pos_idx_df, dataset_filename, extension="csv")
+    save(grid_pos_idx_df, df, dataset_filename, extension="csv")
 
 
 gps_positions = pdk.Layer(
