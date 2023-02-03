@@ -5,7 +5,7 @@ import pandas as pd
 from nn.data_augmentation import one_to_many_augmenter
 from geodesic_calculations import point_at
 
-dataset_filename = "./saved_measurements/erlangen_test_dataset.csv"
+dataset_filename = "./saved_measurements/erlangen_dataset.csv"
 df = pd.read_csv(dataset_filename)
 
 df = one_to_many_augmenter(df, distance_m=3, k=8)

@@ -13,7 +13,7 @@ class MeasurementDataset(Dataset):
         self.y_df = pd.read_csv(y_directory)
         self.num_features = num_features
 
-        self.x_df = (self.x_df - x_normalization[0]) / x_normalization[1]
+        # self.x_df = (self.x_df - x_normalization[0]) / x_normalization[1]
 
 
     def __len__(self):

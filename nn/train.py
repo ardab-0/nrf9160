@@ -16,13 +16,13 @@ restored_checkpoint = -1
 batch_size = 128
 learning_rate = 1e-3
 epochs = 200
-checkpoint_folder = "checkpoints/mlp_12_grid50"
+checkpoint_folder = "checkpoints/mlp_12"
 train_ratio = 0.9
-output_classes = 56 *4
+output_classes = 56
 input_features = 12
 
-x_directory="../saved_measurements/erlangen_dataset_50_augmented.csv"
-y_directory="../saved_measurements/erlangen_dataset_50_label.csv"
+x_directory="../saved_measurements/erlangen_dataset_augmented.csv"
+y_directory="../saved_measurements/erlangen_dataset_label.csv"
 
 
 data_x_df = pd.read_csv(x_directory)

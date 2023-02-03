@@ -9,20 +9,21 @@ import pandas as pd
 restored_checkpoint = 200
 
 batch_size = 128
-checkpoint_folder = "checkpoints/mlp_12"
-output_classes = 56 * 4
+checkpoint_folder = "checkpoints/mlp_12_grid200"
+output_classes = 16
 input_features = 12
 
-x_directory="../saved_measurements/erlangen_dataset__50augmented.csv"
-y_directory="../saved_measurements/erlangen_dataset__50label.csv"
+train_x_directory="../saved_measurements/erlangen_dataset_200_augmented.csv"
+test_x_directory = "../saved_measurements/erlangen_test_dataset_200_augmented.csv"
+test_y_directory="../saved_measurements/erlangen_test_dataset_200_label.csv"
 
 
-data_x_df = pd.read_csv(x_directory)
+data_x_df = pd.read_csv(train_x_directory)
 x_mean = data_x_df.mean()
 x_std = data_x_df.std()
 
-test_data = MeasurementDataset(x_directory=x_directory,
-                                  y_directory=y_directory, x_normalization=(x_mean, x_std), num_features=input_features)
+test_data = MeasurementDataset(x_directory=test_x_directory,
+                                  y_directory=test_y_directory, x_normalization=(x_mean, x_std), num_features=input_features)
 test_dataloader = DataLoader(test_data, batch_size=batch_size)
 
 
