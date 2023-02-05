@@ -5,7 +5,7 @@ import torch
 
 
 class MeasurementDataset(Dataset):
-    def __init__(self, x_directory, y_directory, x_normalization,num_features, rnd_seed=101):
+    def __init__(self, x_directory, y_directory,num_features, rnd_seed=101):
         np.random.seed(rnd_seed)
         self.x_directory = x_directory
         self.x_df = pd.read_csv(x_directory)
