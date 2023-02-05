@@ -3,7 +3,7 @@ import streamlit as st
 import pydeck as pdk
 import pandas as pd
 from nn.data_augmentation import one_to_many_augmenter
-from geodesic_calculations import point_at
+from geodesic_calculations import point_at, get_distance_and_bearing
 import os
 import json
 
@@ -130,6 +130,35 @@ def save(label_df, augmented_df, grid_lines, filename, save_path, grid_length):
     with open(grid_lines_file_path, 'w') as fp:
         json.dump(grid_lines, fp)
 
+def grid_index_to_coordinates(grid_lines, grid_indices):
+    cols = len(grid_lines["vertical_lines"]) - 1
+    rows = len(grid_lines["horizontal_lines"]) - 1
+
+    coordinates = []
+
+    for idx in grid_indices:
+        row_idx = int(idx / cols)
+        col_idx = idx % cols
+
+        top_left_coor = grid_lines["vertical_lines"][col_idx]["start"]
+        top_right_coor = grid_lines["vertical_lines"][col_idx + 1]["start"]
+
+        left_top_coor = grid_lines["horizontal_lines"][row_idx]["start"]
+        left_bottom_coor = grid_lines["horizontal_lines"][row_idx + 1]["start"]
+
+        # change lat, lon order
+        top_distance_meter, top_bearing_angle_deg = get_distance_and_bearing((top_left_coor[1], top_left_coor[0]), (top_right_coor[1], top_right_coor[0]))
+        left_distance_meter, left_bearing_angle_deg = get_distance_and_bearing((left_top_coor[1], left_top_coor[0]), (left_bottom_coor[1], left_bottom_coor[0]))
+
+        top_middle_coor = point_at((top_left_coor[1], top_left_coor[0]), top_distance_meter/2, top_bearing_angle_deg)
+        left_middle_coor = point_at((left_top_coor[1], left_top_coor[0]), left_distance_meter/2, left_bearing_angle_deg)
+
+        longitude = top_middle_coor[1]
+        latitude = left_middle_coor[0]
+        coordinates.append([longitude, latitude])
+
+    return pd.DataFrame(coordinates, columns=["longitude", "latitude"])
+
 
 ################################# Sliders ############################################################
 
@@ -182,6 +211,12 @@ if -1 in grid_pos_idx_df["idx"].values:
 if st.sidebar.button("Save label df"):
     save(grid_pos_idx_df, df, grid_lines, dataset_filename, save_location_path, grid_length)
 
+
+
+prediction_grid_indices = [0, 1, 2, 71]
+prediction_coordinates_df = grid_index_to_coordinates(grid_lines, prediction_grid_indices)
+st.write(prediction_coordinates_df)
+
 gps_positions = pdk.Layer(
     "ScatterplotLayer",
     data=df,
@@ -197,6 +232,25 @@ gps_positions = pdk.Layer(
     # radius_max_pixels=60,
     get_fill_color=[252, 0, 0],
     get_line_color=[255, 0, 0],
+    tooltip="test test",
+)
+
+
+prediction_positions = pdk.Layer(
+    "ScatterplotLayer",
+    data=prediction_coordinates_df,
+    pickable=False,
+    opacity=1,
+    stroked=True,
+    filled=True,
+    line_width_min_pixels=1,
+    get_position=["longitude", "latitude"],
+    get_radius=1,
+    radius_min_pixels=1,
+    radiusScale=1,
+    # radius_max_pixels=60,
+    get_fill_color=[0, 255, 0],
+    get_line_color=[0, 255, 0],
     tooltip="test test",
 )
 
@@ -223,7 +277,7 @@ grid_line_layer = pdk.Layer(
 view = pdk.ViewState(latitude=49.5, longitude=11, zoom=10, )
 # Create the deck.gl map
 r = pdk.Deck(
-    layers=[gps_positions, outer_line_layer, grid_line_layer],
+    layers=[gps_positions, outer_line_layer, grid_line_layer, prediction_positions],
     initial_view_state=view,
     map_style="mapbox://styles/mapbox/light-v10",
 )
