@@ -4,8 +4,12 @@ import pydeck as pdk
 import pandas as pd
 from nn.data_augmentation import one_to_many_augmenter
 from geodesic_calculations import point_at
+import os
+import json
 
 dataset_filename = "./saved_measurements/erlangen_dataset.csv"
+save_location_path = "./nn/datasets/"
+
 df = pd.read_csv(dataset_filename)
 
 df = one_to_many_augmenter(df, distance_m=3, k=8)
@@ -47,44 +51,52 @@ def calculate_grid(tl_lon, tl_lat, tr_lon, tr_lat, bl_lon, bl_lat, grid_length_m
 
 
 def calculate_grid_lines(horizontal_steps_top, vertical_steps_left, horizontal_steps_bottom, vertical_steps_right):
-    lines = []
+
+    vertical_lines = []
+    horizontal_lines = []
+
 
     for i in range(len(horizontal_steps_top)):
-        lines.append({"start": horizontal_steps_top[i], "end": horizontal_steps_bottom[i]})
+        vertical_lines.append({"start": horizontal_steps_top[i], "end": horizontal_steps_bottom[i]})
 
     for i in range(len(vertical_steps_left)):
-        lines.append({"start": vertical_steps_left[i], "end": vertical_steps_right[i]})
+        horizontal_lines.append({"start": vertical_steps_left[i], "end": vertical_steps_right[i]})
 
-    return lines, len(horizontal_steps_top) - 1, len(
+    vertical_and_horizontal_lines = {"vertical_lines": vertical_lines,
+                                     "horizontal_lines": horizontal_lines}
+
+    return vertical_and_horizontal_lines, len(horizontal_steps_top) - 1, len(
         vertical_steps_left) - 1  # coordinate number is 1 more than the grid element number
 
 
 def find_grid_index(lon, lat, grid_lines, cols, rows):
     row = -1
     col = -1
-    is_any_inside_grid = False
 
     i = 0
     j = 0
+    vertical_lines = grid_lines["vertical_lines"]
+    horizontal_lines = grid_lines["horizontal_lines"]
+
     while i < cols:
-        if (lon > grid_lines[i]["start"][0] and lon <= grid_lines[i + 1]["start"][0]):
+        if (lon > vertical_lines[i]["start"][0] and lon <= vertical_lines[i + 1]["start"][0]):
             col = i
         i += 1
 
     while j < rows:
-        if (lat < grid_lines[cols + 1 + j]["start"][1] and lat >= grid_lines[cols + 1 + j + 1]["start"][1]):
+        if (lat < horizontal_lines[j]["start"][1] and lat >= horizontal_lines[j + 1]["start"][1]):
             row = j
         j += 1
-
-    # if col == -1 or row == -1:
-    #     col = -1
-    #     row = -1
 
     return col, row
 
 
-def divide_samples(dataset_df, grid_lines, cols, rows):
+def divide_samples(dataset_df, grid_lines):
     sample_positions_on_grid = np.zeros((len(dataset_df), 3), dtype=int)
+    cols = len(grid_lines["vertical_lines"]) - 1
+    rows = len(grid_lines["horizontal_lines"]) - 1
+
+
 
     for index, row in dataset_df.iterrows():
         col, row = find_grid_index(row['longitude'], row['latitude'], grid_lines, cols, rows)
@@ -95,20 +107,29 @@ def divide_samples(dataset_df, grid_lines, cols, rows):
     return pd.DataFrame(sample_positions_on_grid, columns=["row", "col", "idx"])
 
 
-def save(label_df, augmented_df, filename, extension="csv"):
-    filename_list = filename.split(".")
-    label_filename = "."
-    augmented_filename = "."
-    for el in filename_list:
-        if el != extension:
-            label_filename += el
-            augmented_filename += el
-        else:
-            label_filename += "_200_label." + el
-            augmented_filename += "_200_augmented." + el
-    print(label_filename)
-    label_df.to_csv(label_filename, index=False)
-    augmented_df.to_csv(augmented_filename, index=False)
+def save(label_df, augmented_df, grid_lines, filename, save_path, grid_length):
+    head, tail = os.path.split(filename)
+
+    filename_list = tail.split(".")
+
+    label_filename = filename_list[0] + "_gridlen" + str(grid_length) + "_label." + filename_list[1]
+    augmented_filename = filename_list[0] + "_gridlen" + str(grid_length) + "_augmented." + filename_list[1]
+    grid_lines_name = filename_list[0] + "_grid_lines_gridlen" + str(grid_length) + ".json"
+
+
+
+    label_file_path = os.path.join(save_path, label_filename)
+    augmented_file_path = os.path.join(save_path, augmented_filename)
+    grid_lines_file_path = os.path.join(save_path, grid_lines_name)
+
+    print(label_file_path)
+    print(augmented_file_path)
+    print(grid_lines_file_path)
+    label_df.to_csv(label_file_path, index=False)
+    augmented_df.to_csv(augmented_file_path, index=False)
+    with open(grid_lines_file_path, 'w') as fp:
+        json.dump(grid_lines, fp)
+
 
 ################################# Sliders ############################################################
 
@@ -153,15 +174,13 @@ grid_lines, cols, rows = calculate_grid_lines(horizontal_steps_top, vertical_ste
                                               vertical_steps_right)
 st.write(grid_lines)
 
-grid_pos_idx_df = divide_samples(df, grid_lines, cols, rows)
+grid_pos_idx_df = divide_samples(df, grid_lines)
 st.write(grid_pos_idx_df)
 if -1 in grid_pos_idx_df["idx"].values:
     st.write("Not all  points are inside grid")
 
-
 if st.sidebar.button("Save label df"):
-    save(grid_pos_idx_df, df, dataset_filename, extension="csv")
-
+    save(grid_pos_idx_df, df, grid_lines, dataset_filename, save_location_path, grid_length)
 
 gps_positions = pdk.Layer(
     "ScatterplotLayer",
@@ -193,7 +212,7 @@ outer_line_layer = pdk.Layer(
 
 grid_line_layer = pdk.Layer(
     "LineLayer",
-    grid_lines,
+    grid_lines["vertical_lines"] + grid_lines["horizontal_lines"],
     get_source_position="start",
     get_target_position="end",
     get_width=1,
