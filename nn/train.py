@@ -11,18 +11,21 @@ from mlp import Mlp
 # 100: 8*7
 # 200: 4*4
 
-restored_checkpoint = -1
+restored_checkpoint = 300
 
 batch_size = 128
 learning_rate = 1e-3
-epochs = 200
-checkpoint_folder = "checkpoints/mlp_12"
+epochs = 300
+checkpoint_folder = "checkpoints/mlp_9_grid100"
 train_ratio = 0.9
-output_classes = 56
-input_features = 12
+output_classes = 64
+input_features = 9
 
-x_directory="../saved_measurements/erlangen_dataset_augmented.csv"
-y_directory="../saved_measurements/erlangen_dataset_label.csv"
+x_directory="./datasets/erlangen_dataset_gridlen100_augmented.csv"
+y_directory="./datasets/erlangen_dataset_gridlen100_label.csv"
+
+x_test_directory="./datasets/erlangen_test_dataset_gridlen100_augmented.csv"
+y_test_directory="./datasets/erlangen_test_dataset_gridlen100_label.csv"
 
 
 data_x_df = pd.read_csv(x_directory)
@@ -30,7 +33,11 @@ x_mean = data_x_df.mean()
 x_std = data_x_df.std()
 
 full_dataset = MeasurementDataset(x_directory=x_directory,
-                                  y_directory=y_directory, x_normalization=(x_mean, x_std), num_features=input_features)
+                                  y_directory=y_directory,
+                                  x_test_directory=x_test_directory,
+                                  y_test_directory=y_test_directory,
+                                  num_features=input_features,
+                                  is_test=False)
 
 train_size = int(len(full_dataset) * train_ratio)
 train_dataset, val_dataset = t.utils.data.random_split(full_dataset, [train_size, len(full_dataset) - train_size])

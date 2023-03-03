@@ -261,10 +261,10 @@ if mode == "Inference":
     rows = len(grid_lines["horizontal_lines"]) - 1
     output_classes = cols*rows
 
-    prediction_grid_indices, label_grid_indices = get_model_predictions_on_test_dataset(restored_checkpoint=200,
-                                                                                        checkpoint_folder="./nn/checkpoints/mlp_12_grid200",
+    prediction_grid_indices, label_grid_indices = get_model_predictions_on_test_dataset(restored_checkpoint=300,
+                                                                                        checkpoint_folder="./nn/checkpoints/mlp_9_grid100",
                                                                                         output_classes=output_classes,
-                                                                                        input_features=12,
+                                                                                        input_features=9,
                                                                                         test_x_directory=augmented_file_path,
                                                                                         test_y_directory=label_file_path,
                                                                                         batch_size = 128)
@@ -281,6 +281,7 @@ if mode == "Inference":
 
     st.write("grid label")
     st.write(pred_label_df)
+    st.write("Mean distance: ", pred_label_df["distance"].mean())
 else:
     prediction_coordinates_df = pd.DataFrame()
 
