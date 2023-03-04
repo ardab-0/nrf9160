@@ -7,9 +7,13 @@ from geodesic_calculations import point_at, get_distance_and_bearing
 import os
 import json
 from nn.test import get_model_predictions_on_test_dataset
+import glob
+from random_forest.random_forest import test
 
-dataset_filename = "./saved_measurements/erlangen_test_dataset.csv"
-save_location_path = "./nn/datasets/"
+dataset_filenames = glob.glob("./saved_measurements/*.csv")
+save_location_path = "./datasets/"
+
+dataset_filename = st.sidebar.selectbox("Select file to load", dataset_filenames)
 
 df = pd.read_csv(dataset_filename)
 
@@ -113,7 +117,7 @@ def save(label_df, augmented_df, grid_lines, filename, save_path, grid_length):
     filename_list = tail.split(".")
 
     label_filename = filename_list[0] + "_gridlen" + str(grid_length) + "_label." + filename_list[1]
-    augmented_filename = filename_list[0] + "_gridlen" + str(grid_length) + "_augmented." + filename_list[1]
+    augmented_filename = filename_list[0] + "_gridlen" + str(grid_length) + "." + filename_list[1]
     grid_lines_name = filename_list[0] + "_grid_lines_gridlen" + str(grid_length) + ".json"
 
     label_file_path = os.path.join(save_path, label_filename)
@@ -134,7 +138,7 @@ def load(filename, save_path):
     filename_list = tail.split(".")
 
     label_filename = filename_list[0] + "_gridlen" + str(grid_length) + "_label." + filename_list[1]
-    augmented_filename = filename_list[0] + "_gridlen" + str(grid_length) + "_augmented." + filename_list[1]
+    augmented_filename = filename_list[0] + "_gridlen" + str(grid_length) + "." + filename_list[1]
     grid_lines_name = filename_list[0] + "_grid_lines_gridlen" + str(grid_length) + ".json"
 
     label_file_path = os.path.join(save_path, label_filename)
@@ -202,6 +206,8 @@ def get_prediction_label_distance_df(prediction_coordinates_df, label_coordinate
 
 ################################# Sliders ############################################################
 
+
+
 grid_length = st.sidebar.slider('Grid Length', 0, 1000, 100, step=10)
 
 tl_lon = st.sidebar.slider('Top Left Longitude', lon_min, lon_max, 11.02860602, step=0.0001)
@@ -261,13 +267,27 @@ if mode == "Inference":
     rows = len(grid_lines["horizontal_lines"]) - 1
     output_classes = cols*rows
 
-    prediction_grid_indices, label_grid_indices = get_model_predictions_on_test_dataset(restored_checkpoint=300,
-                                                                                        checkpoint_folder="./nn/checkpoints/mlp_9_grid100",
-                                                                                        output_classes=output_classes,
-                                                                                        input_features=9,
-                                                                                        test_x_directory=augmented_file_path,
-                                                                                        test_y_directory=label_file_path,
-                                                                                        batch_size = 128)
+    # prediction_grid_indices, label_grid_indices = get_model_predictions_on_test_dataset(restored_checkpoint=300,
+    #                                                                                     checkpoint_folder="./nn/checkpoints/mlp_9_grid100",
+    #                                                                                     output_classes=output_classes,
+    #                                                                                     input_features=9,
+    #                                                                                     test_x_directory=augmented_file_path,
+    #                                                                                     test_y_directory=label_file_path,
+    #                                                                                     batch_size = 128)
+
+    # prediction_grid_indices, label_grid_indices = get_model_predictions_on_test_dataset(restored_checkpoint=1000,
+    #                                     checkpoint_folder="./nn/checkpoints/mlp_9_grid100_prev1",
+    #                                     output_classes=64,
+    #                                     input_features=9,
+    #                                     train_x_directory="./datasets/erlangen_dataset_gridlen100.csv",
+    #                                     train_y_directory="./datasets/erlangen_dataset_gridlen100_label.csv",
+    #                                     test_x_directory="./datasets/erlangen_test_dataset_gridlen100.csv",
+    #                                     test_y_directory="./datasets/erlangen_test_dataset_gridlen100_label.csv",
+    #                                     batch_size=32,
+    #                                     num_prev_steps=1)
+
+
+    prediction_grid_indices, label_grid_indices = test()
 
     st.write("loaded label df")
     st.write(label_grid_indices)
