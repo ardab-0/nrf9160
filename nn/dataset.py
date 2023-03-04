@@ -32,22 +32,23 @@ class MeasurementDataset(Dataset):
 
     def __getitem__(self, idx):
 
-        a = self.get_previous_steps_randomly(self.x_train_df, idx)
+        idx = idx + self.num_prev_steps-1
+
 
         if self.is_test:
-            x = self.x_test_df.iloc[idx:idx + self.num_prev_steps, :self.num_features].to_numpy().reshape((-1))
+            x = self.get_previous_steps_randomly(self.x_test_df, idx).reshape((-1))
             y = self.y_test_df.iloc[idx, 2]
         else:
-            x = self.x_train_df.iloc[idx:idx + self.num_prev_steps, :self.num_features].to_numpy().reshape((-1))
+            x = self.get_previous_steps_randomly(self.x_train_df, idx).reshape((-1))
             y = self.y_train_df.iloc[idx, 2]
         return torch.tensor(x, dtype=torch.float32), torch.tensor(y, dtype=torch.long)
 
     def get_previous_steps_randomly(self, df, idx):
 
-        x = np.zeros((self.num_prev_steps, len(df.iloc[0])))
+        x = np.zeros((self.num_prev_steps, self.num_features))
         for i in range(self.num_prev_steps):
             augmentation_idx = random.randint(0, self.augmentation_coefficient)
 
-            x[i] = df[df["original_index"] == (idx-i)].iloc[augmentation_idx]
+            x[i] = df[df["original_index"] == (idx-i)].iloc[augmentation_idx, :self.num_features]
 
         return x

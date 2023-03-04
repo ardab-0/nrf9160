@@ -8,19 +8,12 @@ import pandas as pd
 
 
 def get_model_predictions_on_test_dataset(restored_checkpoint, checkpoint_folder, output_classes, input_features,
-                                          train_x_directory, train_y_directory, test_x_directory, test_y_directory,
-                                          batch_size, num_prev_steps):
-    test_data = MeasurementDataset(x_directory=train_x_directory,
-                                   y_directory=train_y_directory,
-                                   x_test_directory=test_x_directory,
-                                   y_test_directory=test_y_directory,
-                                   num_features=input_features,
-                                   num_prev_steps=num_prev_steps,
-                                   is_test=True)
-
+                                          test_x_directory, test_y_directory, batch_size):
+    test_data = MeasurementDataset(x_directory=test_x_directory,
+                                   y_directory=test_y_directory, num_features=input_features)
     test_dataloader = DataLoader(test_data, batch_size=batch_size)
 
-    model = Mlp(input_features=input_features * num_prev_steps, output_classes=output_classes)
+    model = Mlp(input_features=input_features, output_classes=output_classes)
     crit = torch.nn.CrossEntropyLoss()
     trainer = Trainer(model, crit, checkpoint_folder=checkpoint_folder)
     trainer.restore_checkpoint(restored_checkpoint)
@@ -54,13 +47,10 @@ def get_model_predictions_on_test_dataset(restored_checkpoint, checkpoint_folder
     return all_predictions, all_labels
 
 
-# get_model_predictions_on_test_dataset(restored_checkpoint=1000,
-#                                       checkpoint_folder="./checkpoints/mlp_9_grid100_prev1",
-#                                       output_classes=64,
-#                                       input_features=9,
-#                                       train_x_directory="../datasets/erlangen_dataset_gridlen100.csv",
-#                                       train_y_directory="../datasets/erlangen_dataset_gridlen100_label.csv",
-#                                       test_x_directory="../datasets/erlangen_test_dataset_gridlen100.csv",
-#                                       test_y_directory="../datasets/erlangen_test_dataset_gridlen100_label.csv",
-#                                       batch_size=32,
-#                                       num_prev_steps=1)
+# get_model_predictions_on_test_dataset(restored_checkpoint=200,
+#                                       checkpoint_folder="./checkpoints/mlp_12_grid200",
+#                                       output_classes=16,
+#                                       input_features=12,
+#                                       test_x_directory="./datasets/erlangen_test_dataset_gridlen200_augmented.csv",
+#                                       test_y_directory="./datasets/erlangen_test_dataset_gridlen200_label.csv",
+#                                       batch_size=128)

@@ -1,46 +1,42 @@
 import pandas as pd
 import torch as t
-from dataset import MeasurementDataset
+from lstm_dataset import LSTMDataset
 from trainer import Trainer
 from matplotlib import pyplot as plt
 import numpy as np
-from mlp import Mlp
+from lstm import LSTMModel
+
 
 # 50 : 8*7 * 4
 # 100: 8*7
 # 200: 4*4
 
-restored_checkpoint = -1
+restored_checkpoint = 300
 
-batch_size = 32
-learning_rate = 1e-4
-epochs = 1000
-checkpoint_folder = "checkpoints/mlp_9_grid100_prev20"
+batch_size = 128
+learning_rate = 1e-3
+epochs = 300
+checkpoint_folder = "checkpoints/mlp_9_grid100"
 train_ratio = 0.9
-
-# network parameters
 output_classes = 64
-num_prev_steps = 20
 input_features = 9
-network_input_length = num_prev_steps * input_features
-# network parameters
 
-x_directory = "../datasets/erlangen_dataset_gridlen100.csv"
-y_directory = "../datasets/erlangen_dataset_gridlen100_label.csv"
+x_directory="../datasets/erlangen_dataset_gridlen100_augmented.csv"
+y_directory="../datasets/erlangen_dataset_gridlen100_label.csv"
 
-x_test_directory = "../datasets/erlangen_test_dataset_gridlen100.csv"
-y_test_directory = "../datasets/erlangen_test_dataset_gridlen100_label.csv"
+x_test_directory="../datasets/erlangen_test_dataset_gridlen100_augmented.csv"
+y_test_directory="../datasets/erlangen_test_dataset_gridlen100_label.csv"
+
 
 data_x_df = pd.read_csv(x_directory)
 x_mean = data_x_df.mean()
 x_std = data_x_df.std()
 
-full_dataset = MeasurementDataset(x_directory=x_directory,
+full_dataset = LSTMDataset(x_directory=x_directory,
                                   y_directory=y_directory,
                                   x_test_directory=x_test_directory,
                                   y_test_directory=y_test_directory,
                                   num_features=input_features,
-                                  num_prev_steps=num_prev_steps,
                                   is_test=False)
 
 train_size = int(len(full_dataset) * train_ratio)
@@ -49,7 +45,7 @@ train_dataset, val_dataset = t.utils.data.random_split(full_dataset, [train_size
 train_dl = t.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 val_dl = t.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
 
-model = Mlp(input_features=network_input_length, output_classes=output_classes)
+model = Mlp(input_features=input_features, output_classes=output_classes)
 
 crit = t.nn.CrossEntropyLoss()
 optim = t.optim.Adam(model.parameters(), lr=learning_rate)
