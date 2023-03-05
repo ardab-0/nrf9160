@@ -204,11 +204,33 @@ def get_prediction_label_distance_df(prediction_coordinates_df, label_coordinate
     return pd.DataFrame(distances, columns=["distance"])
 
 
+def remove_outliers(prediction_coordinates_df, label_coordinates_df,  threshold, moving_average_bins):
+    rows_to_drop = []
+
+    for i in range(moving_average_bins, len(prediction_coordinates_df)):
+        average_coordinate = 0
+        for j in range(moving_average_bins):
+            current_idx = i-(j+1)
+            current_row = prediction_coordinates_df.iloc[current_idx]
+            current_coor = np.array([current_row["latitude"], current_row["longitude"]])
+            average_coordinate += current_coor
+
+        average_coordinate /= moving_average_bins
+
+        pred_row = prediction_coordinates_df.iloc[i]
+        pred_coordinate = np.array([pred_row["latitude"], pred_row["longitude"]])
+        distance_m, bearing_deg = get_distance_and_bearing(pred_coordinate, average_coordinate)
+
+        if distance_m > threshold:
+            rows_to_drop.append(i)
+
+    return prediction_coordinates_df.drop(rows_to_drop), label_coordinates_df.drop(rows_to_drop)
+
 ################################# Sliders ############################################################
 
 
 
-grid_length = st.sidebar.slider('Grid Length', 0, 1000, 100, step=10)
+grid_length = st.sidebar.slider('Grid Length', 0, 1000, 100, step=1)
 
 tl_lon = st.sidebar.slider('Top Left Longitude', lon_min, lon_max, 11.02860602, step=0.0001)
 tl_lat = st.sidebar.slider('Top Left Latitude', lat_min, lat_max, 49.57246557, step=0.0001)
@@ -294,14 +316,18 @@ if mode == "Inference":
     prediction_coordinates_df = grid_index_to_coordinates(grid_lines, prediction_grid_indices)
     label_coordinates_df = label_df[["latitude", "longitude"]]
 
+    prediction_coordinates_df, label_coordinates_df = remove_outliers(prediction_coordinates_df,label_coordinates_df, 30, 3)
+    st.write(prediction_coordinates_df)
+
+
     distance_df = get_prediction_label_distance_df(prediction_coordinates_df, label_coordinates_df)
 
-    pred_label_df = pd.DataFrame(np.array([prediction_grid_indices, label_grid_indices]).T, columns=["predictions", "labels"])
-    pred_label_df = pred_label_df.join(distance_df)
+    # pred_label_df = pd.DataFrame(np.array([prediction_grid_indices, label_grid_indices]).T, columns=["predictions", "labels"])
+    # pred_label_df = pred_label_df.join(distance_df)
 
-    st.write("grid label")
-    st.write(pred_label_df)
-    st.write("Mean distance: ", pred_label_df["distance"].mean())
+    st.write("distance df")
+    st.write(distance_df)
+    st.write("Mean distance: ", distance_df.mean())
 else:
     prediction_coordinates_df = pd.DataFrame()
 

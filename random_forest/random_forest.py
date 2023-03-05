@@ -1,7 +1,7 @@
 from sklearn.ensemble import RandomForestClassifier
 import pandas as pd
 import numpy as np
-
+from geodesic_calculations import get_distance_and_bearing
 
 def test():
     x_directory = "./datasets/erlangen_dataset_gridlen20.csv"
@@ -10,7 +10,7 @@ def test():
     x_test_directory = "./datasets/erlangen_test_dataset_gridlen20.csv"
     y_test_directory = "./datasets/erlangen_test_dataset_gridlen20_label.csv"
 
-    num_features = 8
+    num_features = 12
 
     x_train_df = pd.read_csv(x_directory)
     y_train_df = pd.read_csv(y_directory)
@@ -32,3 +32,9 @@ def test():
     print(y_test == predictions)
     print("Accuracy: ", np.mean(y_test == predictions))
     return predictions, y_test
+
+
+
+
+
+
