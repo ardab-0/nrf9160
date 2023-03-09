@@ -13,7 +13,6 @@ class Mlp(nn.Module):
         self.fc4 = nn.Linear(128, 64)
         self.fc5 = nn.Linear(64, output_classes)
 
-        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
         x = self.fc1(x)
@@ -25,7 +24,6 @@ class Mlp(nn.Module):
         x = self.fc4(x)
         x = F.relu(x)
         x = self.fc5(x)
-        x = self.softmax(x)
         return x
 
 
@@ -33,6 +31,6 @@ def get_network_prediction(network_output):
 
     out = F.softmax(network_output, dim=1)
     predicted_labels = torch.argmax(out, dim=1)
-    lane_probability = out[:, 1]
+    probability = out[:, 1]
 
-    return predicted_labels, lane_probability
+    return predicted_labels, probability
