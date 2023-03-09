@@ -15,12 +15,12 @@ restored_checkpoint = -1
 batch_size = 32
 learning_rate = 1e-4
 epochs = 1000
-checkpoint_folder = "checkpoints/mlp_9_grid100_prev20"
+checkpoint_folder = "checkpoints/mlp_9_grid100_prev5"
 train_ratio = 0.9
 
 # network parameters
 output_classes = 64
-num_prev_steps = 20
+num_prev_steps = 5
 input_features = 9
 network_input_length = num_prev_steps * input_features
 # network parameters
@@ -66,5 +66,7 @@ plt.plot(np.arange(len(res[0])), res[0], label='train loss')
 plt.plot(np.arange(len(res[1])), res[1], label='val loss')
 plt.yscale('log')
 plt.legend()
-plt.savefig('losses.png')
+
+figure_name = checkpoint_folder.split("/")[1] + " " + str(restored_checkpoint) + " - " + str(restored_checkpoint + epochs) + ' losses.png'
+plt.savefig(figure_name)
 plt.show()
