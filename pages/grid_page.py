@@ -6,9 +6,12 @@ from nn.data_augmentation import one_to_many_augmenter
 from geodesic_calculations import point_at, get_distance_and_bearing
 import os
 import json
-from nn.test import get_model_predictions_on_test_dataset
+# from nn.test import get_model_predictions_on_test_dataset
 import glob
 from random_forest.random_forest import test
+from lstm.test import get_model_predictions_on_test_dataset
+
+
 
 dataset_filenames = glob.glob("./saved_measurements/*.csv")
 save_location_path = "./datasets/"
@@ -17,7 +20,7 @@ dataset_filename = st.sidebar.selectbox("Select file to load", dataset_filenames
 
 df = pd.read_csv(dataset_filename)
 
-df = one_to_many_augmenter(df, distance_m=3, k=8)
+# df = one_to_many_augmenter(df, distance_m=3, k=8)
 
 st.write(df)
 
@@ -208,7 +211,7 @@ def remove_outliers(prediction_coordinates_df, label_coordinates_df,  threshold,
     rows_to_drop = []
 
     for i in range(moving_average_bins, len(prediction_coordinates_df)):
-        average_coordinate = 0
+        average_coordinate = 0 #normal average is enough since coordinates are close
         for j in range(moving_average_bins):
             current_idx = i-(j+1)
             current_row = prediction_coordinates_df.iloc[current_idx]
@@ -297,26 +300,34 @@ if mode == "Inference":
     #                                                                                     test_y_directory=label_file_path,
     #                                                                                     batch_size = 128)
 
-    # prediction_grid_indices, label_grid_indices = get_model_predictions_on_test_dataset(restored_checkpoint=1000,
-    #                                     checkpoint_folder="./nn/checkpoints/mlp_9_grid100_prev1",
-    #                                     output_classes=64,
+    # prediction_grid_indices, label_grid_indices = get_model_predictions_on_test_dataset(restored_checkpoint=29,
+    #                                     checkpoint_folder="./nn/checkpoints/mlp_9_grid50_prev5",
+    #                                     output_classes=64*4,
     #                                     input_features=9,
     #                                     train_x_directory="./datasets/erlangen_dataset_gridlen100.csv",
     #                                     train_y_directory="./datasets/erlangen_dataset_gridlen100_label.csv",
     #                                     test_x_directory="./datasets/erlangen_test_dataset_gridlen100.csv",
     #                                     test_y_directory="./datasets/erlangen_test_dataset_gridlen100_label.csv",
     #                                     batch_size=32,
-    #                                     num_prev_steps=1)
+    #                                     num_prev_steps=5)
 
+    prediction_grid_indices, label_grid_indices = get_model_predictions_on_test_dataset(restored_checkpoint=1000,
+                                          checkpoint_folder="./lstm/checkpoints/lstm_9_grid50_prev5",
+                                          output_classes=64*4,
+                                          input_features=9,
+                                          x_directory="./datasets/erlangen_test_dataset_gridlen100.csv",
+                                          y_directory="./datasets/erlangen_test_dataset_gridlen100_label.csv",
+                                          batch_size=32,
+                                          num_prev_steps=5)
 
-    prediction_grid_indices, label_grid_indices = test()
+    # prediction_grid_indices, label_grid_indices = test()
 
     st.write("loaded label df")
     st.write(label_grid_indices)
     prediction_coordinates_df = grid_index_to_coordinates(grid_lines, prediction_grid_indices)
     label_coordinates_df = label_df[["latitude", "longitude"]]
 
-    prediction_coordinates_df, label_coordinates_df = remove_outliers(prediction_coordinates_df,label_coordinates_df, 30, 3)
+    prediction_coordinates_df, label_coordinates_df = remove_outliers(prediction_coordinates_df,label_coordinates_df, 50, 5)
     st.write(prediction_coordinates_df)
 
 

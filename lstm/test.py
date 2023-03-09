@@ -2,18 +2,25 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from nn.trainer import Trainer
-from nn.dataset import MeasurementDataset
-from nn.mlp import Mlp, get_network_prediction
+from lstm.lstm_dataset import LSTMDataset
+from lstm.lstm import LSTMModel, get_network_prediction
 import pandas as pd
 
 
 def get_model_predictions_on_test_dataset(restored_checkpoint, checkpoint_folder, output_classes, input_features,
-                                          test_x_directory, test_y_directory, batch_size):
-    test_data = MeasurementDataset(x_directory=test_x_directory,
-                                   y_directory=test_y_directory, num_features=input_features)
-    test_dataloader = DataLoader(test_data, batch_size=batch_size)
+                                          x_directory, y_directory, batch_size, num_prev_steps):
 
-    model = Mlp(input_features=input_features, output_classes=output_classes)
+
+
+
+    test_data = LSTMDataset(x_directory=x_directory,
+                           y_directory=y_directory,
+                           num_features=input_features,
+                           num_prev_steps=num_prev_steps
+                           )
+    test_dataloader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
+
+    model = LSTMModel(input_dim=input_features, hidden_dim=32, layer_dim=1, output_dim=output_classes)
     crit = torch.nn.CrossEntropyLoss()
     trainer = Trainer(model, crit, checkpoint_folder=checkpoint_folder)
     trainer.restore_checkpoint(restored_checkpoint)
