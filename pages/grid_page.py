@@ -14,7 +14,7 @@ import lstm.test
 dataset_filenames = glob.glob("./saved_measurements/*.csv")
 save_location_path = "./datasets/"
 MODELS = ["mlp_9_grid100", "mlp_9_grid50_prev5", "lstm_9_grid50_prev5", "lstm_9_grid20_prev10", "random_forest_grid20"]
-
+layers_to_plot = []
 dataset_filename = st.sidebar.selectbox("Select file to load", dataset_filenames)
 
 df = pd.read_csv(dataset_filename)
@@ -290,6 +290,65 @@ def get_selected_model_predictions(model_name):
     return prediction_grid_indices, label_grid_indices
 
 
+def draw_coordinates_at_selected_time(prediction_df, label_df, time_idx):
+    layers = []
+
+    prediction_coordinates_at_selected_time_df = prediction_df.iloc[time_idx].to_frame().T
+    label_coordinates_at_selected_time_df = label_df.iloc[time_idx].to_frame().T
+
+
+    prediction_coordinates_at_selected_time = pdk.Layer(
+        "ScatterplotLayer",
+        data=prediction_coordinates_at_selected_time_df,
+        pickable=False,
+        opacity=1,
+        stroked=True,
+        filled=False,
+        line_width_min_pixels=1,
+        get_position=["longitude", "latitude"],
+        get_radius=10,
+        radius_min_pixels=1,
+        radiusScale=1,
+        # radius_max_pixels=60,
+        get_fill_color=[0, 252, 0],
+        get_line_color=[0, 252, 0],
+        tooltip="test test",
+    )
+
+    label_coordinates_at_selected_time = pdk.Layer(
+        "ScatterplotLayer",
+        data=label_coordinates_at_selected_time_df,
+        pickable=False,
+        opacity=1,
+        stroked=True,
+        filled=False,
+        line_width_min_pixels=1,
+        get_position=["longitude", "latitude"],
+        get_radius=10,
+        radius_min_pixels=1,
+        radiusScale=1,
+        # radius_max_pixels=60,
+        get_fill_color=[252, 0, 0],
+        get_line_color=[255, 0, 0],
+        tooltip="test test",
+    )
+    layers.append(prediction_coordinates_at_selected_time)
+    layers.append(label_coordinates_at_selected_time)
+    return layers
+
+
+def correct_offset(long_df, short_df):
+    short_len = len(short_df)
+    long_len = len(long_df)
+    offset = long_len - short_len
+    if offset > 0:
+        offset_corrected_long_df = long_df.iloc[offset:]
+        return offset_corrected_long_df
+
+    return long_df
+
+
+
 ################################# Sliders ############################################################
 
 
@@ -303,8 +362,6 @@ l_length = st.sidebar.slider('Left Edge', 0, 10000, grid_length, step=grid_lengt
 bearing_angle_deg = st.sidebar.slider('Bearing Angle Degree', -180., 180., 90., step=0.01)
 
 ######################################################################################################
-
-
 
 
 mode = st.sidebar.radio("Select Mode", ('Grid Adjustment', 'Inference'))
@@ -321,20 +378,27 @@ if mode == "Inference":
 
     prediction_grid_indices, label_grid_indices = get_selected_model_predictions(selected_model_name)
 
-
     prediction_coordinates_df = grid_index_to_coordinates(grid_lines, prediction_grid_indices)
     label_coordinates_df = label_df[["latitude", "longitude"]]
 
+
+    offset_corrected_label_coordinates_df = correct_offset(label_coordinates_df, prediction_coordinates_df)
+
     # prediction_coordinates_df, label_coordinates_df = remove_outliers(prediction_coordinates_df,label_coordinates_df, 30, 1)
 
-    distance_df = get_prediction_label_distance_df(prediction_coordinates_df, label_coordinates_df)
+    distance_df = get_prediction_label_distance_df(prediction_coordinates_df, offset_corrected_label_coordinates_df)
 
-    pred_label_df = pd.DataFrame(np.array([prediction_grid_indices, label_grid_indices]).T, columns=["prediction index", "label index"])
+    pred_label_df = pd.DataFrame(np.array([prediction_grid_indices, label_grid_indices]).T,
+                                 columns=["prediction index", "label index"])
     pred_label_df = pred_label_df.join(distance_df)
 
     st.write("distance df")
     st.write(pred_label_df)
     st.write("Mean distance: ", pred_label_df["distance"].mean())
+
+    index_of_selected_estimation_result = st.slider("Select time index", 0, len(prediction_coordinates_df) - 1, value=0)
+    layers_to_plot.extend(draw_coordinates_at_selected_time(prediction_coordinates_df, offset_corrected_label_coordinates_df, index_of_selected_estimation_result))
+
 else:
     tr = point_at((tl_lat, tl_lon), t_length, bearing_angle_deg)
     tr_lat, tr_lon = tr[0], tr[1]
@@ -362,8 +426,6 @@ else:
 
     if st.sidebar.button("Save label df"):
         save(grid_pos_idx_df, df, grid_lines, dataset_filename, save_location_path, grid_length)
-
-
 
     prediction_coordinates_df = pd.DataFrame()
 
@@ -423,10 +485,14 @@ grid_line_layer = pdk.Layer(
     pickable=False,
 )
 
+layers_to_plot.append(gps_positions)
+layers_to_plot.append(grid_line_layer)
+layers_to_plot.append(prediction_positions)
+
 view = pdk.ViewState(latitude=49.5, longitude=11, zoom=10, )
 # Create the deck.gl map
 r = pdk.Deck(
-    layers=[gps_positions, grid_line_layer, prediction_positions],
+    layers=layers_to_plot,
     initial_view_state=view,
     map_style="mapbox://styles/mapbox/light-v10",
 )
