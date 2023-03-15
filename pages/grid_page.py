@@ -251,20 +251,31 @@ def get_selected_model_predictions(model_name):
             checkpoint_folder="./nn/checkpoints/mlp_9_grid100",
             output_classes=output_classes,
             input_features=9,
-            test_x_directory=augmented_file_path,
-            test_y_directory=label_file_path,
+            test_x_directory="./datasets/erlangen_test_dataset_gridlen100.csv",
+            test_y_directory="./datasets/erlangen_test_dataset_gridlen100_label.csv",
             batch_size=128,
             num_prev_steps=1)
 
-    elif model_name == "lstm_9_grid50_prev5":
+    elif model_name == "mlp_9_grid50_prev5":
 
         prediction_grid_indices, label_grid_indices = nn.test.get_model_predictions_on_test_dataset(
             restored_checkpoint=29,
             checkpoint_folder="./nn/checkpoints/mlp_9_grid50_prev5",
             output_classes=64 * 4,
             input_features=9,
-            test_x_directory=augmented_file_path,
-            test_y_directory=label_file_path,
+            test_x_directory="./datasets/erlangen_test_dataset_gridlen50.csv",
+            test_y_directory="./datasets/erlangen_test_dataset_gridlen50_label.csv",
+            batch_size=32,
+            num_prev_steps=5)
+
+    elif model_name == "lstm_9_grid50_prev5":
+        prediction_grid_indices, label_grid_indices = lstm.test.get_model_predictions_on_test_dataset(
+            restored_checkpoint=100,
+            checkpoint_folder="./lstm/checkpoints/lstm_9_grid50_prev5",
+            output_classes=64*4,
+            input_features=9,
+            x_directory="./datasets/erlangen_test_dataset_gridlen50.csv",
+            y_directory="./datasets/erlangen_test_dataset_gridlen50_label.csv",
             batch_size=32,
             num_prev_steps=5)
 
@@ -399,6 +410,47 @@ if mode == "Inference":
     index_of_selected_estimation_result = st.slider("Select time index", 0, len(prediction_coordinates_df) - 1, value=0)
     layers_to_plot.extend(draw_coordinates_at_selected_time(prediction_coordinates_df, offset_corrected_label_coordinates_df, index_of_selected_estimation_result))
 
+    prediction_positions = pdk.Layer(
+        "ScatterplotLayer",
+        data=prediction_coordinates_df,
+        pickable=False,
+        opacity=1,
+        stroked=True,
+        filled=True,
+        line_width_min_pixels=1,
+        get_position=["longitude", "latitude"],
+        get_radius=1,
+        radius_min_pixels=1,
+        radiusScale=1,
+        # radius_max_pixels=60,
+        get_fill_color=[0, 255, 0],
+        get_line_color=[0, 255, 0],
+        tooltip="test test",
+    )
+
+    layers_to_plot.append(prediction_positions)
+
+    label_positions = pdk.Layer(
+        "ScatterplotLayer",
+        data=label_coordinates_df,
+        pickable=False,
+        opacity=1,
+        stroked=True,
+        filled=True,
+        line_width_min_pixels=1,
+        get_position=["longitude", "latitude"],
+        get_radius=1,
+        radius_min_pixels=1,
+        radiusScale=1,
+        # radius_max_pixels=60,
+        get_fill_color=[255, 0, 0],
+        get_line_color=[255, 0, 0],
+        tooltip="test test",
+    )
+
+    layers_to_plot.append(label_positions)
+
+
 else:
     tr = point_at((tl_lat, tl_lon), t_length, bearing_angle_deg)
     tr_lat, tr_lon = tr[0], tr[1]
@@ -427,43 +479,32 @@ else:
     if st.sidebar.button("Save label df"):
         save(grid_pos_idx_df, df, grid_lines, dataset_filename, save_location_path, grid_length)
 
-    prediction_coordinates_df = pd.DataFrame()
 
-gps_positions = pdk.Layer(
-    "ScatterplotLayer",
-    data=df,
-    pickable=False,
-    opacity=1,
-    stroked=True,
-    filled=True,
-    line_width_min_pixels=1,
-    get_position=["longitude", "latitude"],
-    get_radius=1,
-    radius_min_pixels=1,
-    radiusScale=1,
-    # radius_max_pixels=60,
-    get_fill_color=[252, 0, 0],
-    get_line_color=[255, 0, 0],
-    tooltip="test test",
-)
+    gps_positions = pdk.Layer(
+        "ScatterplotLayer",
+        data=df,
+        pickable=False,
+        opacity=1,
+        stroked=True,
+        filled=True,
+        line_width_min_pixels=1,
+        get_position=["longitude", "latitude"],
+        get_radius=1,
+        radius_min_pixels=1,
+        radiusScale=1,
+        # radius_max_pixels=60,
+        get_fill_color=[252, 0, 0],
+        get_line_color=[255, 0, 0],
+        tooltip="test test",
+    )
 
-prediction_positions = pdk.Layer(
-    "ScatterplotLayer",
-    data=prediction_coordinates_df,
-    pickable=False,
-    opacity=1,
-    stroked=True,
-    filled=True,
-    line_width_min_pixels=1,
-    get_position=["longitude", "latitude"],
-    get_radius=1,
-    radius_min_pixels=1,
-    radiusScale=1,
-    # radius_max_pixels=60,
-    get_fill_color=[0, 255, 0],
-    get_line_color=[0, 255, 0],
-    tooltip="test test",
-)
+    layers_to_plot.append(gps_positions)
+
+
+
+
+
+
 
 # outer_line_layer = pdk.Layer(
 #     "LineLayer",
@@ -485,9 +526,7 @@ grid_line_layer = pdk.Layer(
     pickable=False,
 )
 
-layers_to_plot.append(gps_positions)
 layers_to_plot.append(grid_line_layer)
-layers_to_plot.append(prediction_positions)
 
 view = pdk.ViewState(latitude=49.5, longitude=11, zoom=10, )
 # Create the deck.gl map
