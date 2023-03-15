@@ -16,7 +16,7 @@ class MeasurementDataset(Dataset):
 
 
         self.num_features = num_features
-        self.augmentation_coefficient = len(self.x_df[self.x_df["original_index"] == 0]) - 1
+        self.augmentation_coefficient = len(self.x_df[self.x_df["original_index"] == 0]) - 1 if "original_index" in self.x_df.columns else 0
 
         # train_min = self.x_train_df.min()
         # train_max = self.x_train_df.max()
@@ -31,8 +31,9 @@ class MeasurementDataset(Dataset):
         idx = idx + self.num_prev_steps-1
 
 
-
         x = self.get_previous_steps_randomly(self.x_df, idx).reshape((-1))
+
+
         y = self.y_df.iloc[idx, 2]
         return torch.tensor(x, dtype=torch.float32), torch.tensor(y, dtype=torch.long)
 
