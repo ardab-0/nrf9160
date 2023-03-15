@@ -239,7 +239,8 @@ def remove_outliers(prediction_coordinates_df, label_coordinates_df, threshold, 
         if distance_m > threshold:
             rows_to_drop.append(i)
 
-    return prediction_coordinates_df.drop(rows_to_drop), label_coordinates_df.drop(rows_to_drop)
+    # remove rows from the original dataframes
+    prediction_coordinates_df.drop(rows_to_drop, inplace=True), label_coordinates_df.drop(rows_to_drop, inplace=True)
 
 
 def get_selected_model_predictions(model_name):
@@ -281,7 +282,7 @@ def get_selected_model_predictions(model_name):
 
     elif model_name == "lstm_9_grid20_prev10":
         prediction_grid_indices, label_grid_indices = lstm.test.get_model_predictions_on_test_dataset(
-            restored_checkpoint=100,
+            restored_checkpoint=123,
             checkpoint_folder="./lstm/checkpoints/lstm_9_grid20_prev10",
             output_classes=64 * 25,
             input_features=9,
@@ -353,7 +354,7 @@ def correct_offset(long_df, short_df):
     long_len = len(long_df)
     offset = long_len - short_len
     if offset > 0:
-        offset_corrected_long_df = long_df.iloc[offset:]
+        offset_corrected_long_df = long_df.iloc[offset:].reset_index(drop=True)
         return offset_corrected_long_df
 
     return long_df
@@ -395,15 +396,20 @@ if mode == "Inference":
 
     offset_corrected_label_coordinates_df = correct_offset(label_coordinates_df, prediction_coordinates_df)
 
-    # prediction_coordinates_df, label_coordinates_df = remove_outliers(prediction_coordinates_df,label_coordinates_df, 30, 1)
+
+    # remove_outliers(prediction_coordinates_df,offset_corrected_label_coordinates_df, 30, 1)
+    #
+    # print(len(prediction_coordinates_df))
+    # print(offset_corrected_label_coordinates_df)
 
     distance_df = get_prediction_label_distance_df(prediction_coordinates_df, offset_corrected_label_coordinates_df)
 
-    pred_label_df = pd.DataFrame(np.array([prediction_grid_indices, label_grid_indices]).T,
-                                 columns=["prediction index", "label index"])
+    # print(distance_df)
+    pred_label_df = pd.concat([prediction_coordinates_df, offset_corrected_label_coordinates_df], axis=1)
+    pred_label_df.columns = ["prediction_longitude", "prediction_latitude", "label_longitude", "label_latitude"]
     pred_label_df = pred_label_df.join(distance_df)
 
-    st.write("distance df")
+    st.write("Predictions, Offset Corrected Labels and Distances")
     st.write(pred_label_df)
     st.write("Mean distance: ", pred_label_df["distance"].mean())
 
