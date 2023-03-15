@@ -37,8 +37,6 @@ x_std = data_x_df.std()
 
 full_dataset = MeasurementDataset(x_directory=x_directory,
                                   y_directory=y_directory,
-                                  x_test_directory=x_test_directory,
-                                  y_test_directory=y_test_directory,
                                   num_features=input_features,
                                   num_prev_steps=num_prev_steps,
                                   is_test=False)

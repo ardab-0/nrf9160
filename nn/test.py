@@ -8,15 +8,13 @@ import pandas as pd
 
 
 def get_model_predictions_on_test_dataset(restored_checkpoint, checkpoint_folder, output_classes, input_features,
-                                          train_x_directory, train_y_directory, test_x_directory, test_y_directory,
+                                          test_x_directory, test_y_directory,
                                           batch_size, num_prev_steps):
-    test_data = MeasurementDataset(x_directory=train_x_directory,
-                                   y_directory=train_y_directory,
-                                   x_test_directory=test_x_directory,
-                                   y_test_directory=test_y_directory,
+    test_data = MeasurementDataset(x_directory=test_x_directory,
+                                   y_directory=test_y_directory,
                                    num_features=input_features,
                                    num_prev_steps=num_prev_steps,
-                                   is_test=True)
+                                   )
 
     test_dataloader = DataLoader(test_data, batch_size=batch_size)
 

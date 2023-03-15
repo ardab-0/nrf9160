@@ -1,3 +1,5 @@
+# source: https://www.deeplearningwizard.com/deep_learning/practical_pytorch/pytorch_lstm_neuralnetwork/
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

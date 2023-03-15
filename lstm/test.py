@@ -9,15 +9,11 @@ import pandas as pd
 
 def get_model_predictions_on_test_dataset(restored_checkpoint, checkpoint_folder, output_classes, input_features,
                                           x_directory, y_directory, batch_size, num_prev_steps):
-
-
-
-
     test_data = LSTMDataset(x_directory=x_directory,
-                           y_directory=y_directory,
-                           num_features=input_features,
-                           num_prev_steps=num_prev_steps
-                           )
+                            y_directory=y_directory,
+                            num_features=input_features,
+                            num_prev_steps=num_prev_steps
+                            )
     test_dataloader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
 
     model = LSTMModel(input_dim=input_features, hidden_dim=32, layer_dim=1, output_dim=output_classes)
@@ -54,10 +50,12 @@ def get_model_predictions_on_test_dataset(restored_checkpoint, checkpoint_folder
     return all_predictions, all_labels
 
 
-# get_model_predictions_on_test_dataset(restored_checkpoint=200,
-#                                       checkpoint_folder="./checkpoints/mlp_12_grid200",
-#                                       output_classes=16,
-#                                       input_features=12,
-#                                       test_x_directory="./datasets/erlangen_test_dataset_gridlen200_augmented.csv",
-#                                       test_y_directory="./datasets/erlangen_test_dataset_gridlen200_label.csv",
-#                                       batch_size=128)
+# get_model_predictions_on_test_dataset(restored_checkpoint=120,
+#                                       checkpoint_folder="./checkpoints/lstm_9_grid20_prev10",
+#                                       output_classes=64 * 25,
+#                                       input_features=9,
+#                                       batch_size=32,
+#                                       num_prev_steps=10,
+#                                       x_directory="../datasets/erlangen_test_dataset_gridlen20.csv",
+#                                       y_directory="../datasets/erlangen_test_dataset_gridlen20_label.csv"
+#                                       )
