@@ -45,7 +45,7 @@ def get_measurement_dictionary_list(measurement_results):
     return measurement_dictionary_list
 
 
-@st.cache(allow_output_mutation=True)
+@st.cache_resource()
 def load_data(dataset_file):
     base_station_df = pd.read_csv(dataset_file)
     base_station_df.columns = ["Radio", "MCC", "MNC", "TAC", "CID", "Unit", "Longitude",

@@ -30,7 +30,7 @@ class WebCrawler:
         myElement = self.driver.find_element(By.TAG_NAME, "button")
         webdriver.ActionChains(self.driver).move_to_element(myElement).click(myElement).perform()
         time.sleep(5)
-        page_source = self.driver.page_sousrce
+        page_source = self.driver.page_source
         start_idx = page_source.find("location is")
         end_idx = page_source.find("Accuracy", start_idx)
         accuracy_end_idx = page_source.find("m", end_idx)

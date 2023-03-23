@@ -10,6 +10,8 @@ import nn.test
 import glob
 import random_forest.random_forest
 import lstm.test
+import matplotlib.pyplot as plt
+
 
 dataset_filenames = glob.glob("./saved_measurements/*.csv")
 save_location_path = "./datasets/"
@@ -222,6 +224,27 @@ def get_prediction_label_distance_df(prediction_coordinates_df, label_coordinate
 def remove_outliers(prediction_coordinates_df, label_coordinates_df, threshold, moving_average_bins):
     rows_to_drop = []
 
+    # distances = np.zeros(len(prediction_coordinates_df)-1)
+    # for i in range(len(prediction_coordinates_df)-1):
+    #     cur_row = prediction_coordinates_df.iloc[i]
+    #     cur_coordinate = np.array([cur_row["latitude"], cur_row["longitude"]])
+    #
+    #     next_row = prediction_coordinates_df.iloc[i+1]
+    #     next_coordinate = np.array([next_row["latitude"], next_row["longitude"]])
+    #     distance_m, bearing_deg = get_distance_and_bearing(cur_coordinate, next_coordinate)
+    #     distances[i] = distance_m
+    #
+    # plt.plot(distances)
+    # fig, ax = plt.subplots()
+    # ax.plot(distances)
+    #
+    # st.pyplot(fig)
+    #
+    # outliers = distances > threshold
+    # rows_to_drop = np.where(outliers)[0] +1
+    # st.write(outliers)
+    # st.write(rows_to_drop)
+
     for i in range(moving_average_bins, len(prediction_coordinates_df)):
         average_coordinate = 0  # normal average is enough since coordinates are close
         for j in range(moving_average_bins):
@@ -239,8 +262,7 @@ def remove_outliers(prediction_coordinates_df, label_coordinates_df, threshold, 
         if distance_m > threshold:
             rows_to_drop.append(i)
 
-    # remove rows from the original dataframes
-    prediction_coordinates_df.drop(rows_to_drop, inplace=True), label_coordinates_df.drop(rows_to_drop, inplace=True)
+    return prediction_coordinates_df.drop(rows_to_drop).reset_index(drop=True), label_coordinates_df.drop(rows_to_drop).reset_index(drop=True)
 
 
 def get_selected_model_predictions(model_name):
@@ -291,12 +313,16 @@ def get_selected_model_predictions(model_name):
             batch_size=32,
             num_prev_steps=10)
     elif model_name == "random_forest_grid20":
-        rf = random_forest.random_forest.RandomForest(x_directory="./datasets/erlangen_dataset_gridlen20.csv",
-                                                      y_directory="./datasets/erlangen_dataset_gridlen20_label.csv",
-                                                      x_test_directory="./datasets/erlangen_test_dataset_gridlen20.csv",
-                                                      y_test_directory="./datasets/erlangen_test_dataset_gridlen20_label.csv",
-                                                      num_features=12)
-        rf.fit()
+        @st.cache_resource
+        def load_rf():
+            rf = random_forest.random_forest.RandomForest(x_directory="./datasets/erlangen_dataset_gridlen20.csv",
+                                                          y_directory="./datasets/erlangen_dataset_gridlen20_label.csv",
+                                                          x_test_directory="./datasets/erlangen_test_dataset_gridlen20.csv",
+                                                          y_test_directory="./datasets/erlangen_test_dataset_gridlen20_label.csv",
+                                                          num_features=12)
+            rf.fit()
+            return rf
+        rf = load_rf()
         prediction_grid_indices, label_grid_indices = rf.test()
 
     return prediction_grid_indices, label_grid_indices
@@ -397,10 +423,9 @@ if mode == "Inference":
     offset_corrected_label_coordinates_df = correct_offset(label_coordinates_df, prediction_coordinates_df)
 
 
-    # remove_outliers(prediction_coordinates_df,offset_corrected_label_coordinates_df, 30, 1)
-    #
-    # print(len(prediction_coordinates_df))
-    # print(offset_corrected_label_coordinates_df)
+    prediction_coordinates_df,offset_corrected_label_coordinates_df = remove_outliers(prediction_coordinates_df,offset_corrected_label_coordinates_df, 30, 3)
+
+
 
     distance_df = get_prediction_label_distance_df(prediction_coordinates_df, offset_corrected_label_coordinates_df)
 
