@@ -26,6 +26,7 @@ def get_model_predictions_on_test_dataset(restored_checkpoint, checkpoint_folder
     average_accuracy = 0
     all_predictions = []
     all_labels = []
+    all_probabilities = []
 
     for i, (input_batch, label_batch) in enumerate(test_dataloader):
         input_batch = input_batch.to(device)
@@ -33,13 +34,14 @@ def get_model_predictions_on_test_dataset(restored_checkpoint, checkpoint_folder
 
         # make a prediction
         model_output = trainer.test_model(input_batch)
-        predictions = get_network_prediction(model_output)
+        predicted_labels, probability = get_network_prediction(model_output)
 
         # print(predictions[0].cpu().detach().numpy().shape)
-        all_predictions += predictions[0].cpu().detach().numpy().tolist()
+        all_predictions += predicted_labels.cpu().detach().numpy().tolist()
         all_labels += label_batch.cpu().detach().numpy().tolist()
+        all_probabilities += probability.cpu().detach().numpy().tolist()
 
-        equal_count = torch.sum((predictions[0] == label_batch)).item()
+        equal_count = torch.sum((predicted_labels== label_batch)).item()
         accuracy = equal_count / len(label_batch)
         print("Accuracy in batch: ", accuracy)
         average_accuracy += accuracy
@@ -47,7 +49,7 @@ def get_model_predictions_on_test_dataset(restored_checkpoint, checkpoint_folder
     average_accuracy = average_accuracy / len(test_dataloader)
     print("Average accuracy: ", average_accuracy)
 
-    return all_predictions, all_labels
+    return all_predictions, all_labels, all_probabilities
 
 
 # get_model_predictions_on_test_dataset(restored_checkpoint=120,

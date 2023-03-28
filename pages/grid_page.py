@@ -60,6 +60,28 @@ def calculate_grid(tl_lon, tl_lat, tr_lon, tr_lat, bl_lon, bl_lat, grid_length_m
     return horizontal_steps_top, vertical_steps_left, horizontal_steps_bottom, vertical_steps_right
 
 
+def calculate_grid_element_center_coordinates(grid_lines, grid_length_meter, bearing_angle_deg):
+    grid_element_center_coordinates = []
+
+    N = len(grid_lines["horizontal_lines"])
+    M = len(grid_lines["vertical_lines"])
+
+    for i in range(N-1):
+        current_point = grid_lines["horizontal_lines"][i]["start"]
+        adjusted_point = point_at((current_point[1], current_point[0]), grid_length/2, bearing_angle_deg+90)
+        points_in_row = []
+        for j in range(M-1):
+            # lat, lon
+            new_point = point_at(adjusted_point, j*grid_length_meter, bearing_angle_deg)
+            points_in_row.append((new_point[1], new_point[0]))
+
+        grid_element_center_coordinates.append(points_in_row)
+
+    return grid_element_center_coordinates
+
+
+
+
 def calculate_grid_lines(tl_lon, tl_lat, tr_lon, tr_lat, bl_lon, bl_lat, grid_length, t_length, l_length,
                          bearing_angle_deg):
     horizontal_steps_top, vertical_steps_left, horizontal_steps_bottom, vertical_steps_right = calculate_grid(tl_lon,
@@ -205,6 +227,30 @@ def grid_index_to_coordinates(grid_lines, grid_indices):
     return pd.DataFrame(coordinates, columns=["longitude", "latitude"])
 
 
+def probability_distribution_to_coordinates(grid_lines, grid_probabilities, grid_length, bearing_angle_deg):
+    grid_element_center_coordinates = calculate_grid_element_center_coordinates(grid_lines, grid_length, bearing_angle_deg)
+    grid_element_center_coordinates_np = np.array(grid_element_center_coordinates)
+
+    grid_element_center_coordinates_np = grid_element_center_coordinates_np.reshape((-1, 2))
+
+
+    coordinates = []
+
+
+    for prabability_distribution in grid_probabilities:
+        prabability_distribution_np = np.array(prabability_distribution).reshape((-1, 1))
+        weighted_coordinates = prabability_distribution_np * grid_element_center_coordinates_np
+
+        print(prabability_distribution_np)
+        average_coordinate = np.sum(weighted_coordinates, axis=0)
+        # print(average_coordinate)
+        # use longitude of top line and latitude of left line
+
+        coordinates.append(average_coordinate)
+
+    return pd.DataFrame(coordinates, columns=["longitude", "latitude"])
+
+
 def get_prediction_label_distance_df(prediction_coordinates_df, label_coordinates_df):
     distances = np.zeros((len(prediction_coordinates_df), 1))
 
@@ -265,8 +311,8 @@ def remove_outliers(prediction_coordinates_df, label_coordinates_df, threshold, 
     return prediction_coordinates_df.drop(rows_to_drop).reset_index(drop=True), label_coordinates_df.drop(rows_to_drop).reset_index(drop=True)
 
 
-def get_selected_model_predictions(model_name):
-    prediction_grid_indices, label_grid_indices = None, None
+def get_selected_model_predictions(model_name, grid_lines, use_probability_weighting):
+    prediction_grid_indices, label_grid_indices, prediction_probability_distributions = None, None, None
 
     if model_name == "mlp_9_grid100":
         prediction_grid_indices, label_grid_indices = nn.test.get_model_predictions_on_test_dataset(
@@ -292,7 +338,7 @@ def get_selected_model_predictions(model_name):
             num_prev_steps=5)
 
     elif model_name == "lstm_9_grid50_prev5":
-        prediction_grid_indices, label_grid_indices = lstm.test.get_model_predictions_on_test_dataset(
+        prediction_grid_indices, label_grid_indices, prediction_probability_distributions = lstm.test.get_model_predictions_on_test_dataset(
             restored_checkpoint=100,
             checkpoint_folder="./lstm/checkpoints/lstm_9_grid50_prev5",
             output_classes=64*4,
@@ -303,7 +349,7 @@ def get_selected_model_predictions(model_name):
             num_prev_steps=5)
 
     elif model_name == "lstm_9_grid20_prev10":
-        prediction_grid_indices, label_grid_indices = lstm.test.get_model_predictions_on_test_dataset(
+        prediction_grid_indices, label_grid_indices, prediction_probability_distributions = lstm.test.get_model_predictions_on_test_dataset(
             restored_checkpoint=123,
             checkpoint_folder="./lstm/checkpoints/lstm_9_grid20_prev10",
             output_classes=64 * 25,
@@ -325,7 +371,12 @@ def get_selected_model_predictions(model_name):
         rf = load_rf()
         prediction_grid_indices, label_grid_indices = rf.test()
 
-    return prediction_grid_indices, label_grid_indices
+    if use_probability_weighting is False:
+        prediction_coordinates_df = grid_index_to_coordinates(grid_lines, prediction_grid_indices)
+    else:
+        prediction_coordinates_df = probability_distribution_to_coordinates(grid_lines, prediction_probability_distributions, grid_length, bearing_angle_deg)
+
+    return prediction_coordinates_df
 
 
 def draw_coordinates_at_selected_time(prediction_df, label_df, time_idx):
@@ -414,9 +465,11 @@ if mode == "Inference":
 
     selected_model_name = st.selectbox('Select model type', MODELS)
 
-    prediction_grid_indices, label_grid_indices = get_selected_model_predictions(selected_model_name)
 
-    prediction_coordinates_df = grid_index_to_coordinates(grid_lines, prediction_grid_indices)
+
+    prediction_coordinates_df = get_selected_model_predictions(selected_model_name, grid_lines, use_probability_weighting=True)
+
+
     label_coordinates_df = label_df[["latitude", "longitude"]]
 
 
