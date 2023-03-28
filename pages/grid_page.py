@@ -227,7 +227,16 @@ def grid_index_to_coordinates(grid_lines, grid_indices):
     return pd.DataFrame(coordinates, columns=["longitude", "latitude"])
 
 
-def probability_distribution_to_coordinates(grid_lines, grid_probabilities, grid_length, bearing_angle_deg):
+def probability_distribution_to_coordinates(grid_lines, grid_probabilities, grid_length, bearing_angle_deg, k):
+    """
+
+    :param grid_lines:
+    :param grid_probabilities:
+    :param grid_length:
+    :param bearing_angle_deg:
+    :param k: number of used probabilites in weighting
+    :return:
+    """
     grid_element_center_coordinates = calculate_grid_element_center_coordinates(grid_lines, grid_length, bearing_angle_deg)
     grid_element_center_coordinates_np = np.array(grid_element_center_coordinates)
 
@@ -238,10 +247,18 @@ def probability_distribution_to_coordinates(grid_lines, grid_probabilities, grid
 
 
     for prabability_distribution in grid_probabilities:
-        prabability_distribution_np = np.array(prabability_distribution).reshape((-1, 1))
-        weighted_coordinates = prabability_distribution_np * grid_element_center_coordinates_np
+        probability_distribution_np = np.array(prabability_distribution).reshape((-1, 1))
+        sorted_probabilites = np.sort(probability_distribution_np, axis=None)
+        threshold = sorted_probabilites[-k]
+        # print(sorted_probabilites)
+        # normalize remaining probabilites
+        probability_distribution_np[probability_distribution_np < threshold] = 0
+        probability_distribution_np = probability_distribution_np / np.sum(probability_distribution_np)
 
-        print(prabability_distribution_np)
+
+        weighted_coordinates = probability_distribution_np * grid_element_center_coordinates_np
+
+        # print(probability_distribution_np)
         average_coordinate = np.sum(weighted_coordinates, axis=0)
         # print(average_coordinate)
         # use longitude of top line and latitude of left line
@@ -374,7 +391,7 @@ def get_selected_model_predictions(model_name, grid_lines, use_probability_weigh
     if use_probability_weighting is False:
         prediction_coordinates_df = grid_index_to_coordinates(grid_lines, prediction_grid_indices)
     else:
-        prediction_coordinates_df = probability_distribution_to_coordinates(grid_lines, prediction_probability_distributions, grid_length, bearing_angle_deg)
+        prediction_coordinates_df = probability_distribution_to_coordinates(grid_lines, prediction_probability_distributions, grid_length, bearing_angle_deg, k=2)
 
     return prediction_coordinates_df
 
