@@ -32,5 +32,6 @@ def get_network_prediction(network_output):
     out = F.softmax(network_output, dim=1)
     predicted_labels = torch.argmax(out, dim=1)
     probability = out[:, 1]
+    raw_probability = out
 
-    return predicted_labels, probability
+    return predicted_labels, raw_probability

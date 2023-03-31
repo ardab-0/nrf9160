@@ -69,6 +69,7 @@ def calculate_grid_element_center_coordinates(grid_lines, grid_length_meter, bea
     for i in range(N-1):
         current_point = grid_lines["horizontal_lines"][i]["start"]
         adjusted_point = point_at((current_point[1], current_point[0]), grid_length/2, bearing_angle_deg+90)
+        adjusted_point = point_at(adjusted_point, grid_length / 2, bearing_angle_deg)
         points_in_row = []
         for j in range(M-1):
             # lat, lon
@@ -332,7 +333,7 @@ def get_selected_model_predictions(model_name, grid_lines, use_probability_weigh
     prediction_grid_indices, label_grid_indices, prediction_probability_distributions = None, None, None
 
     if model_name == "mlp_9_grid100":
-        prediction_grid_indices, label_grid_indices = nn.test.get_model_predictions_on_test_dataset(
+        prediction_grid_indices, label_grid_indices, prediction_probability_distributions = nn.test.get_model_predictions_on_test_dataset(
             restored_checkpoint=300,
             checkpoint_folder="./nn/checkpoints/mlp_9_grid100",
             output_classes=output_classes,
@@ -344,7 +345,7 @@ def get_selected_model_predictions(model_name, grid_lines, use_probability_weigh
 
     elif model_name == "mlp_9_grid50_prev5":
 
-        prediction_grid_indices, label_grid_indices = nn.test.get_model_predictions_on_test_dataset(
+        prediction_grid_indices, label_grid_indices, prediction_probability_distributions = nn.test.get_model_predictions_on_test_dataset(
             restored_checkpoint=29,
             checkpoint_folder="./nn/checkpoints/mlp_9_grid50_prev5",
             output_classes=64 * 4,
@@ -391,7 +392,7 @@ def get_selected_model_predictions(model_name, grid_lines, use_probability_weigh
     if use_probability_weighting is False:
         prediction_coordinates_df = grid_index_to_coordinates(grid_lines, prediction_grid_indices)
     else:
-        prediction_coordinates_df = probability_distribution_to_coordinates(grid_lines, prediction_probability_distributions, grid_length, bearing_angle_deg, k=2)
+        prediction_coordinates_df = probability_distribution_to_coordinates(grid_lines, prediction_probability_distributions, grid_length, bearing_angle_deg, k=1)
 
     return prediction_coordinates_df
 
@@ -493,7 +494,7 @@ if mode == "Inference":
     offset_corrected_label_coordinates_df = correct_offset(label_coordinates_df, prediction_coordinates_df)
 
 
-    prediction_coordinates_df,offset_corrected_label_coordinates_df = remove_outliers(prediction_coordinates_df,offset_corrected_label_coordinates_df, 30, 3)
+    # prediction_coordinates_df,offset_corrected_label_coordinates_df = remove_outliers(prediction_coordinates_df,offset_corrected_label_coordinates_df, 30, 3)
 
 
 
