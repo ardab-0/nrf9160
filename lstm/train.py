@@ -16,16 +16,15 @@ batch_size = 128
 learning_rate = 1e-3
 epochs = 500
 checkpoint_folder = "checkpoints/lstm_9_grid5_prev10"
-train_ratio = 0.9
-output_classes = 64 * 25 * 16
+train_ratio = 0.9 # train - validation ratio
+output_classes = 64 * 25 * 16 # number of grid cells (800/5) * (800/5)
 input_features = 9
 num_prev_steps = 10
 
 x_directory = "../datasets/erlangen_dataset_gridlen5.csv"
 y_directory = "../datasets/erlangen_dataset_gridlen5_label.csv"
 
-x_test_directory = "../datasets/erlangen_test_dataset_gridlen5.csv"
-y_test_directory = "../datasets/erlangen_test_dataset_gridlen5_label.csv"
+
 
 data_x_df = pd.read_csv(x_directory)
 # x_mean = data_x_df.mean()

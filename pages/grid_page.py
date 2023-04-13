@@ -13,12 +13,12 @@ import lstm.test
 import matplotlib.pyplot as plt
 
 
-dataset_filenames = glob.glob("./saved_measurements/*.csv")
-save_location_path = "./datasets/"
+dataset_filenames = glob.glob("./combined_measurements/*.csv")
+save_location_path = "./datasets/"  # save location of dataset which is divided into grid cells
 MODELS = ["mlp_9_grid100", "mlp_9_grid50_prev5", "lstm_9_grid50_prev5", "lstm_9_grid20_prev10", "random_forest_grid20"]
 layers_to_plot = []
 dataset_filename = st.sidebar.selectbox("Select file to load", dataset_filenames)
-
+bearing_angle_deg = 90
 df = pd.read_csv(dataset_filename)
 
 # df = one_to_many_augmenter(df, distance_m=3, k=8)
@@ -26,13 +26,17 @@ df = pd.read_csv(dataset_filename)
 st.write("Loaded Data Frame")
 st.write(df)
 
+
+# Initial coordinates for sliders
 lon = 11.02860602
 lat = 49.57246557
 lon_max = lon + 0.01
 lon_min = lon - 0.01
 lat_max = lat + 0.01
 lat_min = lat - 0.01
+# Initial coordinates
 
+# Helper functions
 
 def calculate_grid(tl_lon, tl_lat, tr_lon, tr_lat, bl_lon, bl_lat, grid_length_meter, t_length, l_length,
                    bearing_angle_deg):
@@ -454,23 +458,11 @@ def correct_offset(long_df, short_df):
 
     return long_df
 
+# End of Helper functions
 
-
-################################# Sliders ############################################################
 
 
 grid_length = st.sidebar.slider('Grid Length', 0, 1000, 100, step=10)
-
-tl_lon = st.sidebar.slider('Top Left Longitude', lon_min, lon_max, 11.02860602, step=0.0001)
-tl_lat = st.sidebar.slider('Top Left Latitude', lat_min, lat_max, 49.57246557, step=0.0001)
-
-t_length = st.sidebar.slider('Top Edge', 0, 10000, grid_length, step=grid_length)
-l_length = st.sidebar.slider('Left Edge', 0, 10000, grid_length, step=grid_length)
-bearing_angle_deg = st.sidebar.slider('Bearing Angle Degree', -180., 180., 90., step=0.01)
-
-######################################################################################################
-
-
 mode = st.sidebar.radio("Select Mode", ('Grid Adjustment', 'Inference'))
 
 if mode == "Inference":
@@ -553,7 +545,20 @@ if mode == "Inference":
     layers_to_plot.append(label_positions)
 
 
-else:
+else: # Mode : Grid adjustment
+
+    ################################# Sliders ############################################################
+
+
+
+    tl_lon = st.sidebar.slider('Top Left Longitude', lon_min, lon_max, 11.02860602, step=0.0001)
+    tl_lat = st.sidebar.slider('Top Left Latitude', lat_min, lat_max, 49.57246557, step=0.0001)
+
+    t_length = st.sidebar.slider('Top Edge', 0, 10000, grid_length, step=grid_length)
+    l_length = st.sidebar.slider('Left Edge', 0, 10000, grid_length, step=grid_length)
+
+    ######################################################################################################
+
     tr = point_at((tl_lat, tl_lon), t_length, bearing_angle_deg)
     tr_lat, tr_lon = tr[0], tr[1]
 
@@ -578,7 +583,7 @@ else:
     if -1 in grid_pos_idx_df["idx"].values:
         st.write("Not all  points are inside grid")
 
-    if st.sidebar.button("Save label df"):
+    if st.sidebar.button("Save"):
         save(grid_pos_idx_df, df, grid_lines, dataset_filename, save_location_path, grid_length)
 
 

@@ -29,7 +29,7 @@ measurement_uncertainty = st.sidebar.slider('Measurement Uncertainty (m)', MEASU
                                             3 * MEASUREMENT_UNCERTAINTY_STEP, step=MEASUREMENT_UNCERTAINTY_STEP)
 measurement_filename = st.sidebar.selectbox("Select file to load", measurement_filenames)
 
-db_type = st.sidebar.radio("Database type", ('Online', 'Offline'))
+db_type = st.sidebar.radio("Database type", ('Offline', 'Online'))
 
 ######################################### Sidebar ###########################################
 

@@ -3,9 +3,17 @@ import pandas as pd
 import numpy as np
 from utils import construct_measurement_dictionary
 
-measurement_filename = "../saved_measurements/erlnagen_moving_test.json"
-coordinate_filename = "../saved_measurements/20230124-155653 - Erlangen_test.kml"
-dataset_filename = "../saved_measurements/erlangen_test_dataset.csv"
+
+# File names
+
+measurement_filename = "../raw_measurements/erlnagen_moving_test.json"  # file produced by the capture_measurement.py
+coordinate_filename = "../raw_measurements/20230124-155653 - Erlangen_test.kml"  # file recorded by the gps tracker application
+dataset_filename = "../combined_measurements/erlangen_test_dataset.csv" # output file
+
+# File names
+
+
+
 
 file_reader_writer = File_Reader_Writer(measurement_filename)
 measurements, orig_position = file_reader_writer.read(get_orig_pos=True)
