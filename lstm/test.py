@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
-from nn.trainer import Trainer
+from lstm.trainer import Trainer
 from lstm.lstm_dataset import LSTMDataset
 from lstm.lstm import LSTMModel, get_network_prediction
 import pandas as pd
@@ -52,12 +52,13 @@ def get_model_predictions_on_test_dataset(restored_checkpoint, checkpoint_folder
     return all_predictions, all_labels, all_probabilities
 
 
-# get_model_predictions_on_test_dataset(restored_checkpoint=120,
-#                                       checkpoint_folder="./checkpoints/lstm_9_grid20_prev10",
-#                                       output_classes=64 * 25,
-#                                       input_features=9,
-#                                       batch_size=32,
-#                                       num_prev_steps=10,
-#                                       x_directory="../datasets/erlangen_test_dataset_gridlen20.csv",
-#                                       y_directory="../datasets/erlangen_test_dataset_gridlen20_label.csv"
-#                                       )
+if __name__ == "__main__":
+    get_model_predictions_on_test_dataset(restored_checkpoint=500,
+                                          checkpoint_folder="./checkpoints/lstm_9_grid20_prev5",
+                                          output_classes=64*25,
+                                          input_features=9,
+                                          batch_size=32,
+                                          num_prev_steps=5,
+                                          x_directory="../datasets/erlangen_test_dataset_gridlen20.csv",
+                                          y_directory="../datasets/erlangen_test_dataset_gridlen20_label.csv"
+                                          )

@@ -10,12 +10,18 @@ import nn.test
 import glob
 import random_forest.random_forest
 import lstm.test
-import matplotlib.pyplot as plt
 
 
 dataset_filenames = glob.glob("./combined_measurements/*.csv")
 save_location_path = "./datasets/"  # save location of dataset which is divided into grid cells
-MODELS = ["mlp_9_grid100", "mlp_9_grid50_prev5", "lstm_9_grid50_prev5", "lstm_9_grid20_prev10", "random_forest_grid20"]
+MODELS = ["mlp_9_grid100", "mlp_9_grid100_prev5", "mlp_9_grid100_prev10",
+          "mlp_9_grid50_prev1", "mlp_9_grid50_prev5", "mlp_9_grid50_prev10",
+          "mlp_9_grid20_prev1", "mlp_9_grid20_prev5", "mlp_9_grid20_prev10",
+          "mlp_9_grid10_prev1",
+          "lstm_9_grid100_prev5", "lstm_9_grid100_prev10",
+          "lstm_9_grid50_prev5", "lstm_9_grid50_prev10",
+          "lstm_9_grid20_prev5", "lstm_9_grid20_prev10",
+          "random_forest_grid20"]
 layers_to_plot = []
 dataset_filename = st.sidebar.selectbox("Select file to load", dataset_filenames)
 bearing_angle_deg = 90
@@ -347,6 +353,43 @@ def get_selected_model_predictions(model_name, grid_lines, use_probability_weigh
             batch_size=128,
             num_prev_steps=1)
 
+    elif model_name == "mlp_9_grid100_prev5":
+
+        prediction_grid_indices, label_grid_indices, prediction_probability_distributions = nn.test.get_model_predictions_on_test_dataset(
+            restored_checkpoint=20,
+            checkpoint_folder="./nn/checkpoints/mlp_9_grid100_prev5",
+            output_classes=64,
+            input_features=9,
+            test_x_directory="./datasets/erlangen_test_dataset_gridlen100.csv",
+            test_y_directory="./datasets/erlangen_test_dataset_gridlen100_label.csv",
+            batch_size=32,
+            num_prev_steps=5)
+
+    elif model_name == "mlp_9_grid100_prev10":
+
+        prediction_grid_indices, label_grid_indices, prediction_probability_distributions = nn.test.get_model_predictions_on_test_dataset(
+            restored_checkpoint=65,
+            checkpoint_folder="./nn/checkpoints/mlp_9_grid100_prev10",
+            output_classes=64,
+            input_features=9,
+            test_x_directory="./datasets/erlangen_test_dataset_gridlen100.csv",
+            test_y_directory="./datasets/erlangen_test_dataset_gridlen100_label.csv",
+            batch_size=32,
+            num_prev_steps=10)
+
+    elif model_name == "mlp_9_grid50_prev1":
+
+        prediction_grid_indices, label_grid_indices, prediction_probability_distributions = nn.test.get_model_predictions_on_test_dataset(
+            restored_checkpoint=60,
+            checkpoint_folder="./nn/checkpoints/mlp_9_grid50_prev1",
+            output_classes=64 * 4,
+            input_features=9,
+            test_x_directory="./datasets/erlangen_test_dataset_gridlen50.csv",
+            test_y_directory="./datasets/erlangen_test_dataset_gridlen50_label.csv",
+            batch_size=32,
+            num_prev_steps=1)
+
+
     elif model_name == "mlp_9_grid50_prev5":
 
         prediction_grid_indices, label_grid_indices, prediction_probability_distributions = nn.test.get_model_predictions_on_test_dataset(
@@ -359,6 +402,88 @@ def get_selected_model_predictions(model_name, grid_lines, use_probability_weigh
             batch_size=32,
             num_prev_steps=5)
 
+    elif model_name == "mlp_9_grid50_prev10":
+
+        prediction_grid_indices, label_grid_indices, prediction_probability_distributions = nn.test.get_model_predictions_on_test_dataset(
+            restored_checkpoint=29,
+            checkpoint_folder="./nn/checkpoints/mlp_9_grid50_prev10",
+            output_classes=64 * 4,
+            input_features=9,
+            test_x_directory="./datasets/erlangen_test_dataset_gridlen50.csv",
+            test_y_directory="./datasets/erlangen_test_dataset_gridlen50_label.csv",
+            batch_size=32,
+            num_prev_steps=10)
+
+    elif model_name == "mlp_9_grid20_prev1":
+
+        prediction_grid_indices, label_grid_indices, prediction_probability_distributions = nn.test.get_model_predictions_on_test_dataset(
+            restored_checkpoint=65,
+            checkpoint_folder="./nn/checkpoints/mlp_9_grid20_prev1",
+            output_classes=64 * 25,
+            input_features=9,
+            test_x_directory="./datasets/erlangen_test_dataset_gridlen20.csv",
+            test_y_directory="./datasets/erlangen_test_dataset_gridlen20_label.csv",
+            batch_size=32,
+            num_prev_steps=1)
+
+    elif model_name == "mlp_9_grid20_prev5":
+
+        prediction_grid_indices, label_grid_indices, prediction_probability_distributions = nn.test.get_model_predictions_on_test_dataset(
+            restored_checkpoint=21,
+            checkpoint_folder="./nn/checkpoints/mlp_9_grid20_prev5",
+            output_classes=64 * 25,
+            input_features=9,
+            test_x_directory="./datasets/erlangen_test_dataset_gridlen20.csv",
+            test_y_directory="./datasets/erlangen_test_dataset_gridlen20_label.csv",
+            batch_size=32,
+            num_prev_steps=5)
+
+    elif model_name == "mlp_9_grid20_prev10":
+
+        prediction_grid_indices, label_grid_indices, prediction_probability_distributions = nn.test.get_model_predictions_on_test_dataset(
+            restored_checkpoint=67,
+            checkpoint_folder="./nn/checkpoints/mlp_9_grid20_prev10",
+            output_classes=64 * 25,
+            input_features=9,
+            test_x_directory="./datasets/erlangen_test_dataset_gridlen20.csv",
+            test_y_directory="./datasets/erlangen_test_dataset_gridlen20_label.csv",
+            batch_size=32,
+            num_prev_steps=10)
+
+    elif model_name == "mlp_9_grid10_prev1":
+
+        prediction_grid_indices, label_grid_indices, prediction_probability_distributions = nn.test.get_model_predictions_on_test_dataset(
+            restored_checkpoint=67,
+            checkpoint_folder="./nn/checkpoints/mlp_9_grid10_prev1",
+            output_classes=64 * 25 * 4,
+            input_features=9,
+            test_x_directory="./datasets/erlangen_test_dataset_gridlen10.csv",
+            test_y_directory="./datasets/erlangen_test_dataset_gridlen10_label.csv",
+            batch_size=32,
+            num_prev_steps=1)
+
+    elif model_name == "lstm_9_grid100_prev5":
+        prediction_grid_indices, label_grid_indices, prediction_probability_distributions = lstm.test.get_model_predictions_on_test_dataset(
+            restored_checkpoint=600,
+            checkpoint_folder="./lstm/checkpoints/lstm_9_grid100_prev5",
+            output_classes=64,
+            input_features=9,
+            x_directory="./datasets/erlangen_test_dataset_gridlen100.csv",
+            y_directory="./datasets/erlangen_test_dataset_gridlen100_label.csv",
+            batch_size=32,
+            num_prev_steps=5)
+
+    elif model_name == "lstm_9_grid100_prev10":
+        prediction_grid_indices, label_grid_indices, prediction_probability_distributions = lstm.test.get_model_predictions_on_test_dataset(
+            restored_checkpoint=900,
+            checkpoint_folder="./lstm/checkpoints/lstm_9_grid100_prev10",
+            output_classes=64,
+            input_features=9,
+            x_directory="./datasets/erlangen_test_dataset_gridlen100.csv",
+            y_directory="./datasets/erlangen_test_dataset_gridlen100_label.csv",
+            batch_size=32,
+            num_prev_steps=10)
+
     elif model_name == "lstm_9_grid50_prev5":
         prediction_grid_indices, label_grid_indices, prediction_probability_distributions = lstm.test.get_model_predictions_on_test_dataset(
             restored_checkpoint=100,
@@ -367,6 +492,28 @@ def get_selected_model_predictions(model_name, grid_lines, use_probability_weigh
             input_features=9,
             x_directory="./datasets/erlangen_test_dataset_gridlen50.csv",
             y_directory="./datasets/erlangen_test_dataset_gridlen50_label.csv",
+            batch_size=32,
+            num_prev_steps=5)
+
+    elif model_name == "lstm_9_grid50_prev10":
+        prediction_grid_indices, label_grid_indices, prediction_probability_distributions = lstm.test.get_model_predictions_on_test_dataset(
+            restored_checkpoint=820,
+            checkpoint_folder="./lstm/checkpoints/lstm_9_grid50_prev10",
+            output_classes=64*4,
+            input_features=9,
+            x_directory="./datasets/erlangen_test_dataset_gridlen50.csv",
+            y_directory="./datasets/erlangen_test_dataset_gridlen50_label.csv",
+            batch_size=32,
+            num_prev_steps=10)
+
+    elif model_name == "lstm_9_grid20_prev5":
+        prediction_grid_indices, label_grid_indices, prediction_probability_distributions = lstm.test.get_model_predictions_on_test_dataset(
+            restored_checkpoint=123,
+            checkpoint_folder="./lstm/checkpoints/lstm_9_grid20_prev5",
+            output_classes=64 * 25,
+            input_features=9,
+            x_directory="./datasets/erlangen_test_dataset_gridlen20.csv",
+            y_directory="./datasets/erlangen_test_dataset_gridlen20_label.csv",
             batch_size=32,
             num_prev_steps=5)
 
@@ -380,6 +527,7 @@ def get_selected_model_predictions(model_name, grid_lines, use_probability_weigh
             y_directory="./datasets/erlangen_test_dataset_gridlen20_label.csv",
             batch_size=32,
             num_prev_steps=10)
+
     elif model_name == "random_forest_grid20":
         @st.cache_resource
         def load_rf():
@@ -477,7 +625,7 @@ if mode == "Inference":
 
 
 
-    prediction_coordinates_df = get_selected_model_predictions(selected_model_name, grid_lines, use_probability_weighting=True)
+    prediction_coordinates_df = get_selected_model_predictions(selected_model_name, grid_lines, use_probability_weighting=False)
 
 
     label_coordinates_df = label_df[["latitude", "longitude"]]
@@ -486,7 +634,7 @@ if mode == "Inference":
     offset_corrected_label_coordinates_df = correct_offset(label_coordinates_df, prediction_coordinates_df)
 
 
-    # prediction_coordinates_df,offset_corrected_label_coordinates_df = remove_outliers(prediction_coordinates_df,offset_corrected_label_coordinates_df, 30, 3)
+    prediction_coordinates_df,offset_corrected_label_coordinates_df = remove_outliers(prediction_coordinates_df,offset_corrected_label_coordinates_df, 30, 3)
 
 
 
@@ -497,9 +645,9 @@ if mode == "Inference":
     pred_label_df.columns = ["prediction_longitude", "prediction_latitude", "label_longitude", "label_latitude"]
     pred_label_df = pred_label_df.join(distance_df)
 
-    st.write("Predictions, Offset Corrected Labels and Distances")
+    st.write("Predictions, Offset Corrected Labels and Distances(m)")
     st.write(pred_label_df)
-    st.write("Mean distance: ", pred_label_df["distance"].mean())
+    st.write("Mean distance (m): ", pred_label_df["distance"].mean())
 
     index_of_selected_estimation_result = st.slider("Select time index", 0, len(prediction_coordinates_df) - 1, value=0)
     layers_to_plot.extend(draw_coordinates_at_selected_time(prediction_coordinates_df, offset_corrected_label_coordinates_df, index_of_selected_estimation_result))

@@ -14,32 +14,32 @@ restored_checkpoint = -1
 
 batch_size = 64
 learning_rate = 1e-3
-epochs = 100
-checkpoint_folder = "checkpoints/mlp_9_grid20_prev5"
+epochs = 200
+checkpoint_folder = "checkpoints/mlp_9_grid10_prev5"
 train_ratio = 0.9
 
 # network parameters
-output_classes = 64 * 25
+output_classes = 64 * 25 * 4
 num_prev_steps = 5
 input_features = 9
 network_input_length = num_prev_steps * input_features
 # network parameters
 
-x_directory = "../datasets/erlangen_dataset_gridlen20.csv"
-y_directory = "../datasets/erlangen_dataset_gridlen20_label.csv"
+x_directory = "../datasets/erlangen_dataset_gridlen10.csv"
+y_directory = "../datasets/erlangen_dataset_gridlen10_label.csv"
 
-x_test_directory = "../datasets/erlangen_test_dataset_gridlen20.csv"
-y_test_directory = "../datasets/erlangen_test_dataset_gridlen20_label.csv"
+# x_test_directory = "../datasets/erlangen_test_dataset_gridlen20.csv"
+# y_test_directory = "../datasets/erlangen_test_dataset_gridlen20_label.csv"
 
-data_x_df = pd.read_csv(x_directory)
-x_mean = data_x_df.mean()
-x_std = data_x_df.std()
+# data_x_df = pd.read_csv(x_directory)
+# x_mean = data_x_df.mean()
+# x_std = data_x_df.std()
 
 full_dataset = MeasurementDataset(x_directory=x_directory,
                                   y_directory=y_directory,
                                   num_features=input_features,
                                   num_prev_steps=num_prev_steps,
-                                  is_test=False)
+                                  )
 
 train_size = int(len(full_dataset) * train_ratio)
 train_dataset, val_dataset = t.utils.data.random_split(full_dataset, [train_size, len(full_dataset) - train_size])

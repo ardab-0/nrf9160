@@ -10,23 +10,24 @@ from lstm import LSTMModel
 # 100: 8*7
 # 200: 4*4
 
+# set -1 for not to use restored checkpoint
 restored_checkpoint = -1
 
 batch_size = 128
 learning_rate = 1e-3
-epochs = 500
-checkpoint_folder = "checkpoints/lstm_9_grid5_prev10"
+epochs = 900
+checkpoint_folder = "checkpoints/lstm_9_grid100_prev10"
 train_ratio = 0.9 # train - validation ratio
-output_classes = 64 * 25 * 16 # number of grid cells (800/5) * (800/5)
+output_classes = 64   # number of grid cells (800/5) * (800/5)
 input_features = 9
 num_prev_steps = 10
 
-x_directory = "../datasets/erlangen_dataset_gridlen5.csv"
-y_directory = "../datasets/erlangen_dataset_gridlen5_label.csv"
+x_directory = "../datasets/erlangen_dataset_gridlen100.csv"
+y_directory = "../datasets/erlangen_dataset_gridlen100_label.csv"
 
 
 
-data_x_df = pd.read_csv(x_directory)
+# data_x_df = pd.read_csv(x_directory)
 # x_mean = data_x_df.mean()
 # x_std = data_x_df.std()
 
