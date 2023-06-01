@@ -10,39 +10,37 @@ from mlp import Mlp
 # 100: 8*7
 # 200: 4*4
 
-restored_checkpoint = 150
+restored_checkpoint = -1 # -1 for no restoration
 
 batch_size = 64
 learning_rate = 1e-3
-epochs = 200 #train until this epoch
-checkpoint_folder = "checkpoints/mlp_9_grid20_prev5_float"
+epochs = 300  # train until this epoch
+checkpoint_folder = "checkpoints/mlp_21_grid50_prev20_normalized"
 train_ratio = 0.9
 
 # network parameters
-output_classes = 64 * 25
-num_prev_steps = 5
-input_features = 9
+output_classes = 64 * 4
+num_prev_steps = 20
+input_features = 21
+augmentation_count = 0
+augmentation_distance_m = 3
 network_input_length = num_prev_steps * input_features
 # network parameters
 
-x_directory = "../datasets/erlangen_dataset_gridlen20.csv"
-y_directory = "../datasets/erlangen_dataset_gridlen20_label.csv"
-
-# x_test_directory = "../datasets/erlangen_test_dataset_gridlen20.csv"
-# y_test_directory = "../datasets/erlangen_test_dataset_gridlen20_label.csv"
-
-# data_x_df = pd.read_csv(x_directory)
-# x_mean = data_x_df.mean()
-# x_std = data_x_df.std()
+x_directory = "../datasets/erlangen_dataset_gridlen50.csv"
+y_directory = "../datasets/erlangen_dataset_gridlen50_label.csv"
 
 full_dataset = MeasurementDataset(x_directory=x_directory,
                                   y_directory=y_directory,
                                   num_features=input_features,
                                   num_prev_steps=num_prev_steps,
+                                  augmentation_count=augmentation_count,
+                                  augmentation_distance_m=augmentation_distance_m
                                   )
 
 train_size = int(len(full_dataset) * train_ratio)
-train_dataset, val_dataset = t.utils.data.random_split(full_dataset, [train_size, len(full_dataset) - train_size])
+generator = t.Generator().manual_seed(42) # to have same split everytime, otherwise during restoration training dataset and validation datasets are mixed
+train_dataset, val_dataset = t.utils.data.random_split(full_dataset, [train_size, len(full_dataset) - train_size], generator=generator)
 
 train_dl = t.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 val_dl = t.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
@@ -64,7 +62,6 @@ plt.plot(np.arange(len(res[0])), res[0], label='train loss')
 plt.plot(np.arange(len(res[1])), res[1], label='val loss')
 plt.yscale('log')
 plt.legend()
-
-figure_name = checkpoint_folder.split("/")[1] + " " + str(restored_checkpoint) + " - " + str(restored_checkpoint + epochs) + ' losses.png'
-plt.savefig(figure_name)
+plt.xlabel("Epochs")
+plt.ylabel("Loss")
 plt.show()
