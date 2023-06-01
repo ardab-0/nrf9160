@@ -5,7 +5,7 @@ import glob
 
 def main():
     # parameters
-    checkpoint_folder = "checkpoints/mlp_21_grid50_prev15_normalized"
+    checkpoint_folder = "checkpoints/mlp_18_grid50_prev15_normalized"
     # parameters
 
     files = sorted(glob.glob(checkpoint_folder + '/*'))

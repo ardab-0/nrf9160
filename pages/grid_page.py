@@ -10,6 +10,7 @@ import nn.test
 import glob
 import random_forest.random_forest
 import lstm.test
+import nn_no_preaugmentation.test
 
 
 dataset_filenames = glob.glob("./combined_measurements/*.csv")
@@ -22,7 +23,7 @@ MODELS = ["mlp_9_grid100", "mlp_9_grid100_prev5", "mlp_9_grid100_prev10",
           "lstm_9_grid50_prev5", "lstm_9_grid50_prev10",
           "lstm_9_grid20_prev5", "lstm_9_grid20_prev10",
           "lstm_24_grid20_prev10",
-          "random_forest_grid20"]
+          "random_forest_grid20", "mlp_18_grid50_prev15_normalized"]
 layers_to_plot = []
 dataset_filename = st.sidebar.selectbox("Select file to load", dataset_filenames)
 bearing_angle_deg = 90
@@ -541,6 +542,20 @@ def get_selected_model_predictions(model_name, grid_lines, use_probability_weigh
             batch_size=32,
             num_prev_steps=10)
 
+    elif model_name == "mlp_18_grid50_prev15_normalized":
+        prediction_grid_indices, label_grid_indices, prediction_probability_distributions = nn_no_preaugmentation.test.get_model_predictions_on_test_dataset(
+                                                restored_checkpoint=100,
+                                              checkpoint_folder="./nn_no_preaugmentation/checkpoints/mlp_18_grid50_prev15_normalized",
+                                              output_classes=64 * 4,
+                                              input_features=18,
+                                              test_x_directory="./datasets/erlangen_test_dataset_gridlen50.csv",
+                                              test_y_directory="./datasets/erlangen_test_dataset_gridlen50_label.csv",
+                                              batch_size=32,
+                                              num_prev_steps=15,
+                                              train_x_directory="./datasets/erlangen_dataset_gridlen50.csv",
+                                              train_y_directory="./datasets/erlangen_dataset_gridlen50_label.csv"
+                                              )
+
     elif model_name == "random_forest_grid20":
         @st.cache_resource
         def load_rf():
@@ -647,7 +662,7 @@ if mode == "Inference":
     offset_corrected_label_coordinates_df = correct_offset(label_coordinates_df, prediction_coordinates_df)
 
 
-    prediction_coordinates_df,offset_corrected_label_coordinates_df = remove_outliers(prediction_coordinates_df,offset_corrected_label_coordinates_df, 30, 3)
+    # prediction_coordinates_df,offset_corrected_label_coordinates_df = remove_outliers(prediction_coordinates_df,offset_corrected_label_coordinates_df, 30, 3)
 
 
 

@@ -15,13 +15,13 @@ restored_checkpoint = -1 # -1 for no restoration
 batch_size = 64
 learning_rate = 1e-3
 epochs = 300  # train until this epoch
-checkpoint_folder = "checkpoints/mlp_21_grid50_prev20_normalized"
+checkpoint_folder = "checkpoints/mlp_18_grid50_prev15_normalized"
 train_ratio = 0.9
 
 # network parameters
 output_classes = 64 * 4
-num_prev_steps = 20
-input_features = 21
+num_prev_steps = 15
+input_features = 18
 augmentation_count = 0
 augmentation_distance_m = 3
 network_input_length = num_prev_steps * input_features
@@ -35,7 +35,8 @@ full_dataset = MeasurementDataset(x_directory=x_directory,
                                   num_features=input_features,
                                   num_prev_steps=num_prev_steps,
                                   augmentation_count=augmentation_count,
-                                  augmentation_distance_m=augmentation_distance_m
+                                  augmentation_distance_m=augmentation_distance_m,
+                                  is_training=True
                                   )
 
 train_size = int(len(full_dataset) * train_ratio)
