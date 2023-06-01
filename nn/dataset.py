@@ -35,7 +35,7 @@ class MeasurementDataset(Dataset):
 
 
         y = self.y_df.iloc[idx, 2] #idx col
-        return torch.tensor(x, dtype=torch.float32), torch.tensor(y, dtype=torch.float32)
+        return torch.tensor(x, dtype=torch.float32), torch.tensor(y, dtype=torch.long)
 
     def get_previous_steps_randomly(self, df, idx):
 

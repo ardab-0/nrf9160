@@ -50,10 +50,13 @@ class Trainer:
         ckp = t.load('{}/checkpoint_{:03d}.ckp'.format(self._checkpoint_folder, epoch_n),
                      'cuda' if self._cuda else None)
         self._model.load_state_dict(ckp['state_dict'])
-        self._optim.load_state_dict(ckp['optimizer_state_dict'])
         self.current_epoch = epoch_n + 1
-        self.train_losses = ckp['train_loss']
-        self.validation_losses = ckp['validation_loss']
+        if "optimizer_state_dict" in ckp:
+            self._optim.load_state_dict(ckp['optimizer_state_dict'])
+        if "train_loss" in ckp:
+            self.train_losses = ckp['train_loss']
+        if "validation_loss" in ckp:
+            self.validation_losses = ckp['validation_loss']
 
     def train_step(self, x, y):
         # y = y.to(t.long)########################################################################################################

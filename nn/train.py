@@ -10,11 +10,11 @@ from mlp import Mlp
 # 100: 8*7
 # 200: 4*4
 
-restored_checkpoint = -1
+restored_checkpoint = 76
 
 batch_size = 64
 learning_rate = 1e-3
-epochs = 200
+epochs = 200 #train until this epoch
 checkpoint_folder = "checkpoints/mlp_9_grid20_prev5_float"
 train_ratio = 0.9
 
