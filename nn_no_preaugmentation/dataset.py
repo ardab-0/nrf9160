@@ -29,12 +29,14 @@ class MeasurementDataset(Dataset):
         self.augmentation_distance_m = augmentation_distance_m
         self.num_prev_steps = num_prev_steps
         self.num_features = num_features
-
+        self.is_training = is_training
         self.x_df = pd.read_csv(x_directory).iloc[:self.dataset_len, :self.num_features]
         self.y_df = pd.read_csv(y_directory).iloc[:self.dataset_len, :]
+        self.x_min_max = None
         if is_training:
             x_min = self.x_df.min()
             x_max = self.x_df.max()
+            self.x_min_max = (x_min, x_max)
             self.x_df = (self.x_df-x_min)/(x_max-x_min)
         else:
             x_min, x_max = training_set_min_max
@@ -54,6 +56,11 @@ class MeasurementDataset(Dataset):
 
         y = self.y_df.iloc[idx, 2]  # idx col
         return torch.tensor(x.to_numpy().reshape((-1)), dtype=torch.float32), torch.tensor(y, dtype=torch.long)
+
+    def get_training_min_max(self):
+        if self.is_training:
+            return self.x_min_max
+        return None
 
     def randomly_augment_positions(self, df):
         """
