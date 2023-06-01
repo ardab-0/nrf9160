@@ -16,14 +16,14 @@ restored_checkpoint = -1
 batch_size = 128
 learning_rate = 1e-3
 epochs = 900
-checkpoint_folder = "checkpoints/lstm_9_grid100_prev10"
+checkpoint_folder = "checkpoints/lstm_24_grid20_prev10"
 train_ratio = 0.9 # train - validation ratio
-output_classes = 64   # number of grid cells (800/5) * (800/5)
-input_features = 9
+output_classes = 64 * 25  # number of grid cells (800/5) * (800/5)
+input_features = 24
 num_prev_steps = 10
 
-x_directory = "../datasets/erlangen_dataset_gridlen100.csv"
-y_directory = "../datasets/erlangen_dataset_gridlen100_label.csv"
+x_directory = "../datasets/erlangen_dataset_minadjusted_gridlen20.csv"
+y_directory = "../datasets/erlangen_dataset_minadjusted_gridlen20_label.csv"
 
 
 

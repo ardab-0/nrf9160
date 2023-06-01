@@ -15,18 +15,18 @@ restored_checkpoint = -1
 batch_size = 64
 learning_rate = 1e-3
 epochs = 200
-checkpoint_folder = "checkpoints/mlp_9_grid10_prev5"
+checkpoint_folder = "checkpoints/mlp_9_grid20_prev5_float"
 train_ratio = 0.9
 
 # network parameters
-output_classes = 64 * 25 * 4
+output_classes = 64 * 25
 num_prev_steps = 5
 input_features = 9
 network_input_length = num_prev_steps * input_features
 # network parameters
 
-x_directory = "../datasets/erlangen_dataset_gridlen10.csv"
-y_directory = "../datasets/erlangen_dataset_gridlen10_label.csv"
+x_directory = "../datasets/erlangen_dataset_gridlen20.csv"
+y_directory = "../datasets/erlangen_dataset_gridlen20_label.csv"
 
 # x_test_directory = "../datasets/erlangen_test_dataset_gridlen20.csv"
 # y_test_directory = "../datasets/erlangen_test_dataset_gridlen20_label.csv"

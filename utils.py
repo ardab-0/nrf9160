@@ -149,8 +149,8 @@ def get_kalman_matrices(measurement_sigma=1, dt=1, sigma_a=1):
     H = np.array([[1, 0, 0, 0, 0, 0],
                   [0, 0, 0, 1, 0, 0]], dtype=float)
 
-    R = np.array([[measurement_sigma, 0],
-                  [0, measurement_sigma]], dtype=float)
+    R = np.array([[measurement_sigma**2, 0],
+                  [0, measurement_sigma**2]], dtype=float)
 
     Q = sigma_a ** 2 * np.array([[dt ** 4 / 4, dt ** 3 / 2, dt ** 2 / 2, 0, 0, 0],
                                  [dt ** 3 / 2, dt ** 2, dt, 0, 0, 0],

@@ -21,13 +21,13 @@ MODELS = ["mlp_9_grid100", "mlp_9_grid100_prev5", "mlp_9_grid100_prev10",
           "lstm_9_grid100_prev5", "lstm_9_grid100_prev10",
           "lstm_9_grid50_prev5", "lstm_9_grid50_prev10",
           "lstm_9_grid20_prev5", "lstm_9_grid20_prev10",
+          "lstm_24_grid20_prev10",
           "random_forest_grid20"]
 layers_to_plot = []
 dataset_filename = st.sidebar.selectbox("Select file to load", dataset_filenames)
 bearing_angle_deg = 90
 df = pd.read_csv(dataset_filename)
 
-# df = one_to_many_augmenter(df, distance_m=3, k=8)
 
 st.write("Loaded Data Frame")
 st.write(df)
@@ -528,6 +528,19 @@ def get_selected_model_predictions(model_name, grid_lines, use_probability_weigh
             batch_size=32,
             num_prev_steps=10)
 
+
+
+    elif model_name == "lstm_24_grid20_prev10":
+        prediction_grid_indices, label_grid_indices, prediction_probability_distributions = lstm.test.get_model_predictions_on_test_dataset(
+            restored_checkpoint=490,
+            checkpoint_folder="./lstm/checkpoints/lstm_24_grid20_prev10",
+            output_classes=64 * 25,
+            input_features=24,
+            x_directory="./datasets/erlangen_test_dataset_minadjusted_gridlen20.csv",
+            y_directory="./datasets/erlangen_test_dataset_minadjusted_gridlen20_label.csv",
+            batch_size=32,
+            num_prev_steps=10)
+
     elif model_name == "random_forest_grid20":
         @st.cache_resource
         def load_rf():
@@ -697,7 +710,7 @@ else: # Mode : Grid adjustment
 
     ################################# Sliders ############################################################
 
-
+    k = st.sidebar.slider('Data Augmentation ', 0, 8, 0, step=1)
 
     tl_lon = st.sidebar.slider('Top Left Longitude', lon_min, lon_max, 11.02860602, step=0.0001)
     tl_lat = st.sidebar.slider('Top Left Latitude', lat_min, lat_max, 49.57246557, step=0.0001)
@@ -724,6 +737,8 @@ else: # Mode : Grid adjustment
     grid_lines, cols, rows = calculate_grid_lines(tl_lon, tl_lat, tr_lon, tr_lat, bl_lon, bl_lat, grid_length, t_length,
                                                   l_length, bearing_angle_deg)
     # st.write(grid_lines)
+
+    df = one_to_many_augmenter(df, distance_m=3, k=k)
 
     grid_pos_idx_df = divide_samples(df, grid_lines)
     st.write("Grid position indices")

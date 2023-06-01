@@ -22,9 +22,9 @@ class Trainer:
         self._checkpoint_folder = checkpoint_folder
         self.predictions = []
         self.labels = []
-        self.accuracy = []
-        self.f1_scores = []
-        self.start_epoch = 0
+        self.train_losses = []
+        self.validation_losses = []
+        self.current_epoch = 0
 
         self._early_stopping_patience = early_stopping_patience
 
@@ -39,14 +39,21 @@ class Trainer:
                 os.mkdir(self._checkpoint_folder)
             except FileExistsError:
                 print("Directory ", self._checkpoint_folder, " already exists")
-        t.save({'state_dict': self._model.state_dict()},
+        t.save({'state_dict': self._model.state_dict(),
+                'epoch': epoch,
+                'optimizer_state_dict': self._optim.state_dict(),
+                'train_loss': self.train_losses,
+                'validation_loss': self.validation_losses},
                '{}/checkpoint_{:03d}.ckp'.format(self._checkpoint_folder, epoch))
 
     def restore_checkpoint(self, epoch_n):
         ckp = t.load('{}/checkpoint_{:03d}.ckp'.format(self._checkpoint_folder, epoch_n),
                      'cuda' if self._cuda else None)
         self._model.load_state_dict(ckp['state_dict'])
-        self.start_epoch = epoch_n
+        self._optim.load_state_dict(ckp['optimizer_state_dict'])
+        self.current_epoch = epoch_n + 1
+        self.train_losses = ckp['train_loss']
+        self.validation_losses = ckp['validation_loss']
 
     def train_step(self, x, y):
         # y = y.to(t.long)########################################################################################################
@@ -108,35 +115,34 @@ class Trainer:
         assert self._early_stopping_patience > 0 or epochs > 0
         # create a list for the train and validation losses, and create a counter for the epoch
 
-        counter_epoch = 0
-        train_losses = []
-        validation_losses = []
+
+
         non_decreasing_epochs = 0
         is_exiting = False
 
         while True and not is_exiting:
-            print("Current epoch = ", counter_epoch)
+            print("Current epoch = ", self.current_epoch)
             # train for an epoch and then calculate the loss and metrics on the validation set
             train_loss = self.train_epoch()
             validation_loss = self.val_test()
             # append the losses to the respective lists
-            train_losses.append(train_loss)
-            validation_losses.append(validation_loss)
+            self.train_losses.append(train_loss)
+            self.validation_losses.append(validation_loss)
             print("Average train loss in epoch:", train_loss)
             print("Average validation loss in epoch: ", validation_loss)
 
             # use the save_checkpoint function to save the model (can be restricted to epochs with improvement)
-            self.save_checkpoint(self.start_epoch + counter_epoch + 1)
+            self.save_checkpoint(self.current_epoch)
             # check whether early stopping should be performed using the early stopping criterion and stop if so
             # return the losses for both training and validation
-            counter_epoch += 1
-            if counter_epoch > 2 and validation_losses[-1] < validation_losses[-2]:
+            self.current_epoch += 1
+            if self.current_epoch > 2 and self.validation_losses[-1] < self.validation_losses[-2]:
                 non_decreasing_epochs = 0
             else:
                 non_decreasing_epochs += 1
                 if non_decreasing_epochs == self._early_stopping_patience:
                     is_exiting = True
             # stop by epoch number
-            if counter_epoch == epochs:
+            if self.current_epoch >= epochs:
                 is_exiting = True
-        return train_losses, validation_losses
+        return self.train_losses, self.validation_losses

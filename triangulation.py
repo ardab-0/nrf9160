@@ -11,7 +11,7 @@ def triangulate(points_np, signal_strengths_np, sigma_np):
 
 
 
-# not finished
+
 def multilateration(s, P):
     anchor_num = P.shape[1]
     dimension_num = P.shape[0]

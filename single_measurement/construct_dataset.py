@@ -6,14 +6,25 @@ from utils import construct_measurement_dictionary
 
 # File names
 
-measurement_filename = "../raw_measurements/erlnagen_moving_test.json"  # file produced by the capture_measurement.py
-coordinate_filename = "../raw_measurements/20230124-155653 - Erlangen_test.kml"  # file recorded by the gps tracker application
-dataset_filename = "../combined_measurements/erlangen_test_dataset.csv" # output file
+measurement_filename = "../raw_measurements/measurements_erlangen_walking.json"  # file produced by the capture_measurement.py
+coordinate_filename = "../raw_measurements/20230124-145846 - Erlangen moving.kml"  # file recorded by the gps tracker application
+dataset_filename = "../combined_measurements/erlangen_dataset_minadjusted.csv" # output file
 
 # File names
 
+max_values = {
+    "physical_cell_id" : 503,
+    "rsrp": 255, #-17
+    "rsrq": 255 # -30
+}
 
+min_values = {
+    "physical_cell_id": 0,
+    "rsrp": -17,
+    "rsrq": -30
+}
 
+min_value_np =  np.array([min_values["physical_cell_id"], min_values["rsrp"], min_values["rsrq"]])
 
 file_reader_writer = File_Reader_Writer(measurement_filename)
 measurements, orig_position = file_reader_writer.read(get_orig_pos=True)
@@ -29,8 +40,12 @@ for measurement_batch in measurements:
     if "neighbor_cells" in dictionary and len(dictionary["neighbor_cells"]) > max_neighbor_count:
         max_neighbor_count = len(dictionary["neighbor_cells"])
 
-measurement_data_np = np.zeros((len(measurements), len(main_base_station_columns) + max_neighbor_count * len(
-    neighbor_base_station_columns) + lat_lon))
+measurement_data_np = np.ones((len(measurements), len(main_base_station_columns) + max_neighbor_count * len(
+    neighbor_base_station_columns) + lat_lon)) * -1  # if there are missing values, th ey will be represented by -1
+
+
+
+
 column_labels = ["current_phys_cell_id", "current_rsrp", "current_rsrq"]
 for i in range(max_neighbor_count):
     column_labels.append(str(i + 1) + "_phys_cell_id")
@@ -55,14 +70,14 @@ for i, measurement_batch in enumerate(measurements):
     measurement_data_np[i, :3] = np.array([dictionary["current_phys_cell_id"],
                                            dictionary["current_rsrp"],
                                            dictionary["current_rsrq"]
-                                           ])
+                                           ], dtype=int) - min_value_np
     if "neighbor_cells" in dictionary:
         for j, neighbor in enumerate(dictionary["neighbor_cells"]):
             measurement_data_np[i, len(main_base_station_columns) + len(neighbor_base_station_columns) * j:len(
                 main_base_station_columns) + len(neighbor_base_station_columns) * j + len(
                 neighbor_base_station_columns)] = np.array([neighbor["n_phys_cell_id"],
                                                             neighbor["n_rsrp"],
-                                                            neighbor["n_rsrq"]])
+                                                            neighbor["n_rsrq"]], dtype=int) - min_value_np
 
     coordinates = coordinate_list[time_idx].split(",")
     measurement_data_np[i, -2] = float(coordinates[0])
