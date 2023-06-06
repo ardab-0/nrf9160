@@ -179,7 +179,9 @@ def save(label_df, augmented_df, grid_lines, filename, save_path, grid_length):
     print(augmented_file_path)
     print(grid_lines_file_path)
     label_df.to_csv(label_file_path, index=False)
-    augmented_df.to_csv(augmented_file_path, index=False)
+
+    # don't include latitude and longitude in training data
+    augmented_df.drop(["longitude", "latitude"], axis=1).to_csv(augmented_file_path, index=False)
     with open(grid_lines_file_path, 'w') as fp:
         json.dump(grid_lines, fp)
 
