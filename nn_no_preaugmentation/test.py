@@ -81,14 +81,38 @@ def get_model_predictions_on_test_dataset(restored_checkpoint, checkpoint_folder
 #             num_prev_steps=5)
 
 if __name__ == "__main__":
-    get_model_predictions_on_test_dataset(restored_checkpoint=219,
-                                          checkpoint_folder="checkpoints/mlp_18_grid50_prev15_normalized",
-                                          output_classes=64 * 4,
-                                          input_features=18,
-                                          test_x_directory="../datasets/erlangen_test_dataset_gridlen50.csv",
-                                          test_y_directory="../datasets/erlangen_test_dataset_gridlen50_label.csv",
+    # dataset parameters
+    GRID_WIDTH = 800
+    GRID_HEIGHT = 800
+    grid_element_length = 50
+    num_prev_steps = 15
+    input_features = 12
+    restored_checkpoint = 299
+    # dataset parameters
+
+
+
+    output_classes = int((GRID_WIDTH / grid_element_length) * (GRID_HEIGHT / grid_element_length))
+    network_input_length = num_prev_steps * input_features
+
+    checkpoint_folder = f"checkpoints/mlp_{input_features}_grid{grid_element_length}_prev{num_prev_steps}_normalized_minadjusted"
+
+    train_x_directory = f"../datasets/erlangen_dataset_minadjusted_gridlen{grid_element_length}.csv"
+    train_y_directory = f"../datasets/erlangen_dataset_minadjusted_gridlen{grid_element_length}_label.csv"
+
+    test_x_directory = f"../datasets/erlangen_test_dataset_minadjusted_gridlen{grid_element_length}.csv"
+    test_y_directory = f"../datasets/erlangen_test_dataset_minadjusted_gridlen{grid_element_length}_label.csv"
+
+
+
+    get_model_predictions_on_test_dataset(restored_checkpoint=restored_checkpoint,
+                                          checkpoint_folder=checkpoint_folder,
+                                          output_classes=output_classes,
+                                          input_features=input_features,
+                                          test_x_directory=test_x_directory,
+                                          test_y_directory=test_y_directory,
                                           batch_size=32,
-                                          num_prev_steps=15,
-                                          train_x_directory="../datasets/erlangen_dataset_gridlen50.csv",
-                                          train_y_directory="../datasets/erlangen_dataset_gridlen50_label.csv"
+                                          num_prev_steps=num_prev_steps,
+                                          train_x_directory=train_x_directory,
+                                          train_y_directory=train_y_directory
                                           )
