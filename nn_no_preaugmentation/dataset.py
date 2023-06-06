@@ -32,7 +32,7 @@ class MeasurementDataset(Dataset):
         self.is_training = is_training
         self.x_df = pd.read_csv(x_directory)
         self.y_df = pd.read_csv(y_directory)
-        self.dataset_len = int(len(self.x_df) / 9) if is_training else len(self.x_df)  # should change
+        self.dataset_len = len(self.x_df)
         self.x_df = self.x_df.iloc[:self.dataset_len, :self.num_features]
         self.y_df = self.y_df.iloc[:self.dataset_len, :]
         self.x_min_max = None
@@ -44,7 +44,6 @@ class MeasurementDataset(Dataset):
         else:
             x_min, x_max = training_set_min_max
             self.x_df = (self.x_df - x_min) / (x_max - x_min)
-            print("h")
         # self.x_test_df = (self.x_test_df-train_min)#/(train_max-train_min)
 
     def __len__(self):
