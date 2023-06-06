@@ -661,8 +661,8 @@ if mode == "Inference":
 
     offset_corrected_label_coordinates_df = correct_offset(label_coordinates_df, prediction_coordinates_df)
 
-
-    # prediction_coordinates_df,offset_corrected_label_coordinates_df = remove_outliers(prediction_coordinates_df,offset_corrected_label_coordinates_df, 30, 3)
+    if st.sidebar.checkbox("Remove Outliers"):
+        prediction_coordinates_df, offset_corrected_label_coordinates_df = remove_outliers(prediction_coordinates_df,offset_corrected_label_coordinates_df, 30, 3)
 
 
 
