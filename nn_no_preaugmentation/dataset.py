@@ -8,7 +8,7 @@ from geodesic_calculations import point_at
 
 class MeasurementDataset(Dataset):
     def __init__(self, x_directory, y_directory, num_features, num_prev_steps, augmentation_count,
-                 augmentation_distance_m, is_training, training_set_min_max=None,
+                 augmentation_distance_m, is_training, normalize, training_set_min_max=None,
                  rnd_seed=101):
 
         """
@@ -36,14 +36,17 @@ class MeasurementDataset(Dataset):
         self.x_df = self.x_df.iloc[:self.dataset_len, :self.num_features]
         self.y_df = self.y_df.iloc[:self.dataset_len, :]
         self.x_min_max = None
-        if is_training:
-            x_min = self.x_df.min()
-            x_max = self.x_df.max()
-            self.x_min_max = (x_min, x_max)
-            self.x_df = (self.x_df-x_min)/(x_max-x_min)
-        else:
-            x_min, x_max = training_set_min_max
-            self.x_df = (self.x_df - x_min) / (x_max - x_min)
+        if normalize == True:
+            if is_training:
+                x_min = self.x_df.min()
+                x_max = self.x_df.max()
+                self.x_min_max = (x_min, x_max)
+                self.x_df = (self.x_df-x_min)/(x_max-x_min)
+            else:
+                x_min, x_max = training_set_min_max
+                self.x_df = (self.x_df - x_min) / (x_max - x_min)
+
+        print("Dataset initialized")
         # self.x_test_df = (self.x_test_df-train_min)#/(train_max-train_min)
 
     def __len__(self):
