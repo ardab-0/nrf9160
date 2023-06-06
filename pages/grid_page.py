@@ -23,7 +23,7 @@ MODELS = ["mlp_9_grid100", "mlp_9_grid100_prev5", "mlp_9_grid100_prev10",
           "lstm_9_grid50_prev5", "lstm_9_grid50_prev10",
           "lstm_9_grid20_prev5", "lstm_9_grid20_prev10",
           "lstm_24_grid20_prev10",
-          "random_forest_grid20", "mlp_18_grid50_prev15_normalized"]
+          "random_forest_grid20", "mlp_18_grid50_prev15_normalized", "mlp_9_grid50_prev3_normalized_minadjusted"]
 layers_to_plot = []
 dataset_filename = st.sidebar.selectbox("Select file to load", dataset_filenames)
 bearing_angle_deg = 90
@@ -557,6 +557,41 @@ def get_selected_model_predictions(model_name, grid_lines, use_probability_weigh
                                               train_x_directory="./datasets/erlangen_dataset_gridlen50.csv",
                                               train_y_directory="./datasets/erlangen_dataset_gridlen50_label.csv"
                                               )
+    elif model_name == "mlp_9_grid50_prev3_normalized_minadjusted":
+
+        # dataset parameters
+        GRID_WIDTH = 800
+        GRID_HEIGHT = 800
+        grid_element_length = 50
+        num_prev_steps = 3
+        input_features = 9
+        restored_checkpoint = 156
+        normalize = True
+        # dataset parameters
+
+        output_classes = int((GRID_WIDTH / grid_element_length) * (GRID_HEIGHT / grid_element_length))
+        network_input_length = num_prev_steps * input_features
+
+        checkpoint_folder = f"./nn_no_preaugmentation/checkpoints/mlp_{input_features}_grid{grid_element_length}_prev{num_prev_steps}{'_normalized' if normalize else ''}_minadjusted"
+
+        train_x_directory = f"./datasets/erlangen_dataset_minadjusted_gridlen{grid_element_length}.csv"
+        train_y_directory = f"./datasets/erlangen_dataset_minadjusted_gridlen{grid_element_length}_label.csv"
+
+        test_x_directory = f"./datasets/erlangen_test_dataset_minadjusted_gridlen{grid_element_length}.csv"
+        test_y_directory = f"./datasets/erlangen_test_dataset_minadjusted_gridlen{grid_element_length}_label.csv"
+
+        prediction_grid_indices, label_grid_indices, prediction_probability_distributions = nn_no_preaugmentation.test.get_model_predictions_on_test_dataset(restored_checkpoint=restored_checkpoint,
+                                          checkpoint_folder=checkpoint_folder,
+                                          output_classes=output_classes,
+                                          input_features=input_features,
+                                          test_x_directory=test_x_directory,
+                                          test_y_directory=test_y_directory,
+                                          batch_size=32,
+                                          num_prev_steps=num_prev_steps,
+                                          train_x_directory=train_x_directory,
+                                          train_y_directory=train_y_directory,
+                                          normalize=normalize
+                                          )
 
     elif model_name == "random_forest_grid20":
         @st.cache_resource
