@@ -125,7 +125,8 @@ class File_Reader_Writer:
         with open(self.filename, 'r+') as file:
             file_data = json.load(file)
             measurements = file_data["measurements"]
-            orig_position = file_data["orig_position"]
+            if get_orig_pos:
+                orig_position = file_data["orig_position"]
         self.producer_lock.release()
         if get_orig_pos:
             return measurements, orig_position
