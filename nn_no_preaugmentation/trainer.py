@@ -1,5 +1,6 @@
 import torch as t
 import os
+import numpy as np
 
 
 class Trainer:
@@ -25,6 +26,7 @@ class Trainer:
         self.train_losses = []
         self.validation_losses = []
         self.current_epoch = 0
+        self.best_validation_loss = np.finfo(np.float32).max
 
         self._early_stopping_patience = early_stopping_patience
 
@@ -118,8 +120,6 @@ class Trainer:
         assert self._early_stopping_patience > 0 or epochs > 0
         # create a list for the train and validation losses, and create a counter for the epoch
 
-
-
         non_decreasing_epochs = 0
         is_exiting = False
 
@@ -134,17 +134,16 @@ class Trainer:
             print("Average train loss in epoch:", train_loss)
             print("Average validation loss in epoch: ", validation_loss)
 
-            # use the save_checkpoint function to save the model (can be restricted to epochs with improvement)
-            self.save_checkpoint(self.current_epoch)
-            # check whether early stopping should be performed using the early stopping criterion and stop if so
-            # return the losses for both training and validation
-            self.current_epoch += 1
-            if self.current_epoch > 2 and self.validation_losses[-1] < self.validation_losses[-2]:
+            if validation_loss <= self.best_validation_loss:
+                self.save_checkpoint(self.current_epoch)
+                self.best_validation_loss = validation_loss
                 non_decreasing_epochs = 0
             else:
                 non_decreasing_epochs += 1
                 if non_decreasing_epochs == self._early_stopping_patience:
                     is_exiting = True
+
+            self.current_epoch += 1
             # stop by epoch number
             if self.current_epoch >= epochs:
                 is_exiting = True
