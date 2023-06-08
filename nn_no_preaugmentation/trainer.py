@@ -1,3 +1,5 @@
+import glob
+
 import torch as t
 import os
 import numpy as np
@@ -49,16 +51,29 @@ class Trainer:
                '{}/checkpoint_{:03d}.ckp'.format(self._checkpoint_folder, epoch))
 
     def restore_checkpoint(self, epoch_n):
-        ckp = t.load('{}/checkpoint_{:03d}.ckp'.format(self._checkpoint_folder, epoch_n),
-                     'cuda' if self._cuda else None)
-        self._model.load_state_dict(ckp['state_dict'])
-        self.current_epoch = epoch_n + 1
-        if "optimizer_state_dict" in ckp:
-            self._optim.load_state_dict(ckp['optimizer_state_dict'])
-        if "train_loss" in ckp:
-            self.train_losses = ckp['train_loss']
-        if "validation_loss" in ckp:
-            self.validation_losses = ckp['validation_loss']
+
+        # remove checkpoints larger than restored checkpoint to prevent mismatch
+        files = sorted(glob.glob(self._checkpoint_folder + '/*'))
+
+        for file in files:
+            saved_epoch_num = (file.split("_")[-1]).split(".")[0]
+            saved_epoch_num = int(saved_epoch_num)
+            if saved_epoch_num > epoch_n:
+                filename = '{}/checkpoint_{:03d}.ckp'.format(self._checkpoint_folder, saved_epoch_num)
+                if os.path.isfile(filename):
+                    os.remove(filename)
+
+        if epoch_n > 0:
+            ckp = t.load('{}/checkpoint_{:03d}.ckp'.format(self._checkpoint_folder, epoch_n),
+                         'cuda' if self._cuda else None)
+            self._model.load_state_dict(ckp['state_dict'])
+            self.current_epoch = epoch_n + 1
+            if "optimizer_state_dict" in ckp:
+                self._optim.load_state_dict(ckp['optimizer_state_dict'])
+            if "train_loss" in ckp:
+                self.train_losses = ckp['train_loss']
+            if "validation_loss" in ckp:
+                self.validation_losses = ckp['validation_loss']
 
     def train_step(self, x, y):
         # y = y.to(t.long)########################################################################################################
