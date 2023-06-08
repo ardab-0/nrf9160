@@ -6,6 +6,8 @@ from geodesic_calculations import get_cartesian_coordinates, get_coordinates
 from triangulation import triangulate
 from web_crawler import WebCrawler
 import os
+import itertools
+from itertools import permutations
 
 
 def construct_measurement_dictionary(measurement_data, return_measurement_list=False):
@@ -92,7 +94,7 @@ def get_base_station_data_web(plmn, tac, cell_id):
     if os.path.exists(file_path):
         df = pd.read_csv(file_path)
     else:
-        df = pd.DataFrame(columns = ["MCC", "MNC", "TAC", "CID", "Longitude", "Latitude", "Range"])
+        df = pd.DataFrame(columns=["MCC", "MNC", "TAC", "CID", "Longitude", "Latitude", "Range"])
         df.to_csv(file_path, index=False)
 
     if len(df.loc[
@@ -149,8 +151,8 @@ def get_kalman_matrices(measurement_sigma=1, dt=1, sigma_a=1):
     H = np.array([[1, 0, 0, 0, 0, 0],
                   [0, 0, 0, 1, 0, 0]], dtype=float)
 
-    R = np.array([[measurement_sigma**2, 0],
-                  [0, measurement_sigma**2]], dtype=float)
+    R = np.array([[measurement_sigma ** 2, 0],
+                  [0, measurement_sigma ** 2]], dtype=float)
 
     Q = sigma_a ** 2 * np.array([[dt ** 4 / 4, dt ** 3 / 2, dt ** 2 / 2, 0, 0, 0],
                                  [dt ** 3 / 2, dt ** 2, dt, 0, 0, 0],
@@ -221,3 +223,15 @@ def calculate_timing_advance_distance(TA):
     NTA = 16 * TA * TS
     distance = (3 * 1e8 * NTA) / 2
     return distance
+
+
+def generate_combinations(lists):
+    """
+    generate unique combinations of elements in lists
+    :param lists: list of lists
+    :return: unique combination list
+    """
+    combination = [p for p in itertools.product(*lists)]
+    return combination
+
+
