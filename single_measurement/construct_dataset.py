@@ -5,9 +5,9 @@ from utils import construct_measurement_dictionary
 
 # File names
 
-measurement_filename = "../raw_measurements/Erlangen-15-02-2023-train.json"  # file produced by the capture_measurement.py
-coordinate_filename = "../raw_measurements/Erlangen-15-02-2023-train.kml"  # file recorded by the gps tracker application
-dataset_filename = "../combined_measurements/Erlangen-15-02-2023-train-minadjusted.csv"  # output file
+measurement_filename = "../raw_measurements/Erlangen-15-02-2023-test.json"  # file produced by the capture_measurement.py
+coordinate_filename = "../raw_measurements/Erlangen-15-02-2023-test.kml"  # file recorded by the gps tracker application
+dataset_filename = "../combined_measurements/Erlangen-15-02-2023-test-minadjusted.csv"  # output file
 
 # File names
 

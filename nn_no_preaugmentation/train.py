@@ -24,7 +24,7 @@ grid_element_length = 50
 normalize = True
 
 # network parameters
-batch_size = 64
+batch_size = 128
 learning_rate = 1e-3
 train_ratio = 0.9
 # num_prev_steps = 3
