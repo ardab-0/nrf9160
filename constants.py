@@ -80,3 +80,5 @@ frequency_lowerband_dict = {"1": 0,
                             "252": 255144,
                             "255": 261519
                             }
+
+BEARING_ANGLE_DEG = 90
