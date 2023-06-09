@@ -163,19 +163,19 @@ def load(filename, save_path, grid_length):
     filename_list = tail.split(".")
 
     label_filename = filename_list[0] + "_gridlen" + str(grid_length) + "_label." + filename_list[1]
-    augmented_filename = filename_list[0] + "_gridlen" + str(grid_length) + "." + filename_list[1]
+    data_filename = filename_list[0] + "_gridlen" + str(grid_length) + "." + filename_list[1]
     grid_lines_name = filename_list[0] + "_grid_lines_gridlen" + str(grid_length) + ".json"
 
     label_file_path = os.path.join(save_path, label_filename)
-    augmented_file_path = os.path.join(save_path, augmented_filename)
+    data_file_path = os.path.join(save_path, data_filename)
     grid_lines_file_path = os.path.join(save_path, grid_lines_name)
 
     label_df = pd.read_csv(label_file_path)
-    augmented_df = pd.read_csv(augmented_file_path)
+    data_df = pd.read_csv(data_file_path)
     with open(grid_lines_file_path, 'r') as fp:
         grid_lines = json.load(fp)
 
-    return label_df, augmented_df, grid_lines, label_file_path, augmented_file_path
+    return label_df, data_df, grid_lines, label_file_path, data_file_path
 
 
 def grid_index_to_coordinates(grid_lines, grid_indices):
@@ -313,7 +313,7 @@ def remove_outliers(prediction_coordinates_df, label_coordinates_df, threshold, 
     return prediction_coordinates_df.drop(rows_to_drop).reset_index(drop=True), label_coordinates_df.drop(rows_to_drop).reset_index(drop=True)
 
 
-def get_selected_model_predictions(model_name, grid_lines, use_probability_weighting):
+def get_selected_model_predictions(model_name, grid_lines, use_probability_weighting, grid_length, bearing_angle_deg):
     prediction_grid_indices, label_grid_indices, prediction_probability_distributions = None, None, None
 
     if model_name == "mlp_9_grid100":
