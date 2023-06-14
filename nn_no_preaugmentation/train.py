@@ -19,18 +19,18 @@ early_stopping_patience = 30
 # dataset parameters
 GRID_WIDTH = 800
 GRID_HEIGHT = 800
-grid_element_length = 50
+grid_element_length = 20
 
 normalize = True
 
 # network parameters
-batch_size = 128
+batch_size = 256
 learning_rate = 1e-3
 train_ratio = 0.9
 # num_prev_steps = 3
 # input_features = 15
-augmentation_count = 0
-augmentation_distance_m = 3
+augmentation_count = 8
+augmentation_distance_m = 10
 # network parameters
 
 num_prev_steps_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -49,6 +49,7 @@ for param_comb in parameter_combinations:
 
     x_directory = f"../datasets/erlangen_dataset_minadjusted_gridlen{grid_element_length}.csv"
     y_directory = f"../datasets/erlangen_dataset_minadjusted_gridlen{grid_element_length}_label.csv"
+    grid_line_directory = f"../datasets/erlangen_dataset_minadjusted_grid_lines_gridlen{grid_element_length}.json"
 
     full_dataset = MeasurementDataset(x_directory=x_directory,
                                       y_directory=y_directory,
@@ -57,7 +58,8 @@ for param_comb in parameter_combinations:
                                       augmentation_count=augmentation_count,
                                       augmentation_distance_m=augmentation_distance_m,
                                       is_training=True,
-                                      normalize=normalize
+                                      normalize=normalize,
+                                      grid_line_directory=grid_line_directory
                                       )
 
     train_size = int(len(full_dataset) * train_ratio)

@@ -4,12 +4,14 @@ import pandas as pd
 import torch
 import random
 from geodesic_calculations import point_at
+import grid_operations.grid_operations as gridops
+import json
 
 
 class MeasurementDataset(Dataset):
     def __init__(self, x_directory, y_directory, num_features, num_prev_steps, augmentation_count,
                  augmentation_distance_m, is_training, normalize, training_set_min_max=None,
-                 rnd_seed=101):
+                 rnd_seed=101, grid_line_directory=None):
 
         """
 
@@ -32,6 +34,12 @@ class MeasurementDataset(Dataset):
         self.is_training = is_training
         self.x_df = pd.read_csv(x_directory)
         self.y_df = pd.read_csv(y_directory)
+        if grid_line_directory is not None:
+            with open(grid_line_directory, 'r') as fp:
+                self.grid_lines = json.load(fp)
+        else:
+            self.grid_lines = None
+
         self.dataset_len = len(self.x_df)
         self.x_df = self.x_df.iloc[:self.dataset_len, :self.num_features]
         self.y_df = self.y_df.iloc[:self.dataset_len, :]
@@ -41,7 +49,7 @@ class MeasurementDataset(Dataset):
                 x_min = self.x_df.min()
                 x_max = self.x_df.max()
                 self.x_min_max = (x_min, x_max)
-                self.x_df = (self.x_df-x_min)/(x_max-x_min)
+                self.x_df = (self.x_df - x_min) / (x_max - x_min)
             else:
                 x_min, x_max = training_set_min_max
                 self.x_df = (self.x_df - x_min) / (x_max - x_min)
@@ -56,11 +64,11 @@ class MeasurementDataset(Dataset):
         idx = idx + self.num_prev_steps  # to account for previous steps
 
         x = self.x_df.iloc[idx - self.num_prev_steps: idx]
-
-        if self.augmentation_count > 0:
-            x = self.randomly_augment_positions(x)
-
         y = self.y_df.iloc[idx, 2]  # idx col
+
+        if self.augmentation_count > 0 and self.grid_lines is not None:
+            y = self.randomly_augment_positions(self.y_df.iloc[idx])
+
         return torch.tensor(x.to_numpy().reshape((-1)), dtype=torch.float32), torch.tensor(y, dtype=torch.long)
 
     def get_training_min_max(self):
@@ -70,18 +78,25 @@ class MeasurementDataset(Dataset):
 
     def randomly_augment_positions(self, df):
         """
-        doesn't work, must implement grid division for each time step
-        :param df:
-        :return:
+
+        :param df: label df (composed of 1 row)
+        :return: new index
         """
-        for idx, row in df.iterrows():
-            rotation_deg = float(np.random.randint(self.augmentation_count)) / self.augmentation_count * 360
-            lat = row["latitude"]
-            lon = row["longitude"]
-            destination_point = point_at((lat, lon), self.augmentation_distance_m, rotation_deg)
 
-            # set randomly augmented coordinates
-            row["latitude"] = destination_point[0]
-            row["longitude"] = destination_point[1]
+        rotation_deg = float(np.random.randint(self.augmentation_count)) / self.augmentation_count * 360
+        distance_scale = np.random.rand()
+        lat = df["latitude"]
+        lon = df["longitude"]
+        destination_point = point_at((lat, lon), distance_scale*self.augmentation_distance_m, rotation_deg)
 
-        return df
+
+
+        cols = len(self.grid_lines["vertical_lines"]) - 1
+        rows = len(self.grid_lines["horizontal_lines"]) - 1
+
+        col, row = gridops.find_grid_index(destination_point.longitude, destination_point.latitude, self.grid_lines, cols, rows)
+        # sample_positions_on_grid[index, 0] = -1 if (row == -1 or col) else row * cols + col
+
+        new_idx = -1 if (row == -1 or col == -1) else row * cols + col
+
+        return new_idx
