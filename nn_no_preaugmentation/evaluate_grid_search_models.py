@@ -5,9 +5,11 @@ from utils import generate_combinations
 from test import get_model_predictions_on_test_dataset
 import glob
 
+# parameters which don't require retraining
 remove_outliers = False
 use_probability_weighting = False
-probability_weighting_k = 1
+probability_weighting_k = 3
+# parameters which don't require retraining
 
 
 CHECKPOINT_FOLDER = "grid_search_checkpoints"
@@ -24,8 +26,8 @@ learning_rate = 1e-3
 train_ratio = 0.9
 # num_prev_steps = 3
 # input_features = 15
-augmentation_count = 0
-augmentation_distance_m = 3
+augmentation_count = 8
+augmentation_distance_m = 20
 # network parameters
 
 
@@ -49,9 +51,10 @@ for param_comb in parameter_combinations:
     rows = len(grid_lines["horizontal_lines"]) - 1
     output_classes = cols * rows
 
-    checkpoint_folder = f"{CHECKPOINT_FOLDER}/mlp_{input_features}_grid{grid_element_length}_prev{num_prev_steps}{'_normalized' if normalize else ''}_minadjusted/"
+    checkpoint_folder = f"{CHECKPOINT_FOLDER}/mlp_{input_features}_grid{grid_element_length}_prev{num_prev_steps}{'_normalized' if normalize else ''}_minadjusted{'_augmented'+str(augmentation_count)+'-'+str(augmentation_distance_m) if augmentation_count>0 else ''}"
 
-    files = sorted(glob.glob(checkpoint_folder + '*'))
+
+    files = sorted(glob.glob(checkpoint_folder + '/*'))
     last_epoch = int((files[-1].split("_")[-1]).split(".")[0])
 
     train_x_directory = f"../datasets/erlangen_dataset_minadjusted_gridlen{grid_element_length}.csv"

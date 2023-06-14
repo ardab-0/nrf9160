@@ -19,18 +19,18 @@ early_stopping_patience = 30
 # dataset parameters
 GRID_WIDTH = 800
 GRID_HEIGHT = 800
-grid_element_length = 20
+grid_element_length = 50
 
 normalize = True
 
 # network parameters
-batch_size = 256
+batch_size = 128
 learning_rate = 1e-3
 train_ratio = 0.9
 # num_prev_steps = 3
 # input_features = 15
 augmentation_count = 8
-augmentation_distance_m = 10
+augmentation_distance_m = 20
 # network parameters
 
 num_prev_steps_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -45,7 +45,7 @@ for param_comb in parameter_combinations:
     output_classes = int((GRID_WIDTH / grid_element_length) * (GRID_HEIGHT / grid_element_length))
     network_input_length = num_prev_steps * input_features
 
-    checkpoint_name = f"{CHECKPOINT_FOLDER}/mlp_{input_features}_grid{grid_element_length}_prev{num_prev_steps}{'_normalized' if normalize else ''}_minadjusted"
+    checkpoint_name = f"{CHECKPOINT_FOLDER}/mlp_{input_features}_grid{grid_element_length}_prev{num_prev_steps}{'_normalized' if normalize else ''}_minadjusted{'_augmented'+str(augmentation_count)+'-'+str(augmentation_distance_m) if augmentation_count>0 else ''}"
 
     x_directory = f"../datasets/erlangen_dataset_minadjusted_gridlen{grid_element_length}.csv"
     y_directory = f"../datasets/erlangen_dataset_minadjusted_gridlen{grid_element_length}_label.csv"
