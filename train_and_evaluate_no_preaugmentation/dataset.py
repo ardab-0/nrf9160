@@ -10,7 +10,7 @@ import json
 
 class MeasurementDataset(Dataset):
     def __init__(self, x_directory, y_directory, num_features, num_prev_steps, augmentation_count,
-                 augmentation_distance_m, is_training, normalize, training_set_min_max=None,
+                 augmentation_distance_m, is_training, normalize, model_type, training_set_min_max=None,
                  rnd_seed=101, grid_line_directory=None):
 
         """
@@ -26,7 +26,7 @@ class MeasurementDataset(Dataset):
         :param rnd_seed:
         """
         np.random.seed(rnd_seed)
-
+        self.model_type = model_type
         self.augmentation_count = augmentation_count
         self.augmentation_distance_m = augmentation_distance_m
         self.num_prev_steps = num_prev_steps
@@ -67,16 +67,16 @@ class MeasurementDataset(Dataset):
         y = self.y_df.iloc[idx, 2]  # idx col
 
         if self.augmentation_count > 0 and self.grid_lines is not None:
-            y = self.randomly_augment_positions(self.y_df.iloc[idx])
+            y = self.randomly_augment_position(self.y_df.iloc[idx])
 
-        return torch.tensor(x.to_numpy().reshape((-1)), dtype=torch.float32), torch.tensor(y, dtype=torch.long)
+        return torch.tensor(self.adjust_shape(x.to_numpy()), dtype=torch.float32), torch.tensor(y, dtype=torch.long)
 
     def get_training_min_max(self):
         if self.is_training:
             return self.x_min_max
         return None
 
-    def randomly_augment_positions(self, df):
+    def randomly_augment_position(self, df):
         """
 
         :param df: label df (composed of 1 row)
@@ -87,16 +87,23 @@ class MeasurementDataset(Dataset):
         distance_scale = np.random.rand()
         lat = df["latitude"]
         lon = df["longitude"]
-        destination_point = point_at((lat, lon), distance_scale*self.augmentation_distance_m, rotation_deg)
-
-
+        destination_point = point_at((lat, lon), distance_scale * self.augmentation_distance_m, rotation_deg)
 
         cols = len(self.grid_lines["vertical_lines"]) - 1
         rows = len(self.grid_lines["horizontal_lines"]) - 1
 
-        col, row = gridops.find_grid_index(destination_point.longitude, destination_point.latitude, self.grid_lines, cols, rows)
+        col, row = gridops.find_grid_index(destination_point.longitude, destination_point.latitude, self.grid_lines,
+                                           cols, rows)
         # sample_positions_on_grid[index, 0] = -1 if (row == -1 or col) else row * cols + col
 
         new_idx = -1 if (row == -1 or col == -1) else row * cols + col
 
         return new_idx
+
+    def adjust_shape(self, x):
+        if self.model_type == "mlp":
+            return x.reshape(-1)
+        elif self.model_type == "lstm":
+            return x
+        else:
+            return None
