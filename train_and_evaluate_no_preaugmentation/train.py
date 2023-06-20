@@ -59,7 +59,8 @@ def main():
                                           augmentation_distance_m=augmentation_distance_m,
                                           is_training=True,
                                           normalize=normalize,
-                                          grid_line_directory=grid_line_directory
+                                          grid_line_directory=grid_line_directory,
+                                          model_type=model_type
                                           )
 
         train_size = int(len(full_dataset) * train_ratio)
