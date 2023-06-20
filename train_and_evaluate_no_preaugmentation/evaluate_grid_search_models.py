@@ -6,37 +6,28 @@ from test import get_model_predictions_on_test_dataset
 import glob
 
 # parameters which don't require retraining
-remove_outliers = False
+remove_outliers = True
 use_probability_weighting = False
 probability_weighting_k = 3
 # parameters which don't require retraining
 
 model_type = "lstm"
-
 CHECKPOINT_FOLDER = "grid_search_checkpoints"
 combined_test_measurement_filename = "erlangen_test_dataset_minadjusted.csv"
 GRID_WIDTH = 800
 GRID_HEIGHT = 800
-grid_element_length = 50
-
+grid_element_length = 20
 normalize = True
-
-# network parameters
-batch_size = 128
-learning_rate = 1e-3
-train_ratio = 0.9
-# num_prev_steps = 3
-# input_features = 15
-augmentation_count = 8
+augmentation_count = 0
 augmentation_distance_m = 20
 # network parameters
-
 
 
 num_prev_steps_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 input_features_list = [6, 9, 12, 15, 18]
 parameter_lists = [num_prev_steps_list, input_features_list]
 parameter_combinations = generate_combinations(parameter_lists)
+mean_distance_result = []
 
 for param_comb in parameter_combinations:
     print("\n\n")
@@ -45,15 +36,15 @@ for param_comb in parameter_combinations:
     num_prev_steps = param_comb[0]
     input_features = param_comb[1]
 
-    label_df, augmented_df, grid_lines, label_file_path, augmented_file_path = gridops.load(combined_test_measurement_filename,
-                                                                                            "../datasets", grid_element_length)
+    label_df, augmented_df, grid_lines, label_file_path, augmented_file_path = gridops.load(
+        combined_test_measurement_filename,
+        "../datasets", grid_element_length)
 
     cols = len(grid_lines["vertical_lines"]) - 1
     rows = len(grid_lines["horizontal_lines"]) - 1
     output_classes = cols * rows
 
-    checkpoint_folder = f"{CHECKPOINT_FOLDER}/{model_type}_{input_features}_grid{grid_element_length}_prev{num_prev_steps}{'_normalized' if normalize else ''}_minadjusted{'_augmented'+str(augmentation_count)+'-'+str(augmentation_distance_m) if augmentation_count>0 else ''}"
-
+    checkpoint_folder = f"{CHECKPOINT_FOLDER}/{model_type}_{input_features}_grid{grid_element_length}_prev{num_prev_steps}{'_normalized' if normalize else ''}_minadjusted{'_augmented' + str(augmentation_count) + '-' + str(augmentation_distance_m) if augmentation_count > 0 else ''}"
 
     files = sorted(glob.glob(checkpoint_folder + '/*'))
     last_epoch = int((files[-1].split("_")[-1]).split(".")[0])
@@ -65,27 +56,28 @@ for param_comb in parameter_combinations:
     test_y_directory = f"../datasets/erlangen_test_dataset_minadjusted_gridlen{grid_element_length}_label.csv"
 
     prediction_grid_indices, label_grid_indices, prediction_probability_distributions = get_model_predictions_on_test_dataset(
-                                            restored_checkpoint=last_epoch,
-                                          checkpoint_folder=checkpoint_folder,
-                                          output_classes=output_classes,
-                                          input_features=input_features,
-                                          test_x_directory=test_x_directory,
-                                          test_y_directory=test_y_directory,
-                                          batch_size=32,
-                                          num_prev_steps=num_prev_steps,
-                                          train_x_directory=train_x_directory,
-                                          train_y_directory=train_y_directory,
-                                          normalize=normalize,
-                                          model_type=model_type
-                                          )
-
+        restored_checkpoint=last_epoch,
+        checkpoint_folder=checkpoint_folder,
+        output_classes=output_classes,
+        input_features=input_features,
+        test_x_directory=test_x_directory,
+        test_y_directory=test_y_directory,
+        batch_size=32,
+        num_prev_steps=num_prev_steps,
+        train_x_directory=train_x_directory,
+        train_y_directory=train_y_directory,
+        normalize=normalize,
+        model_type=model_type
+    )
 
     if use_probability_weighting is False:
         prediction_coordinates_df = gridops.grid_index_to_coordinates(grid_lines, prediction_grid_indices)
     else:
-        prediction_coordinates_df = gridops.probability_distribution_to_coordinates(grid_lines, prediction_probability_distributions, grid_element_length, BEARING_ANGLE_DEG, k=probability_weighting_k)
-
-
+        prediction_coordinates_df = gridops.probability_distribution_to_coordinates(grid_lines,
+                                                                                    prediction_probability_distributions,
+                                                                                    grid_element_length,
+                                                                                    BEARING_ANGLE_DEG,
+                                                                                    k=probability_weighting_k)
 
     label_coordinates_df = label_df[["latitude", "longitude"]]
 
@@ -103,5 +95,12 @@ for param_comb in parameter_combinations:
     pred_label_df.columns = ["prediction_longitude", "prediction_latitude", "label_longitude", "label_latitude"]
     pred_label_df = pred_label_df.join(distance_df)
 
-
     print("Mean distance (m): ", pred_label_df["distance"].mean())
+    mean_distance_result.append(pred_label_df["distance"].mean())
+
+print("Mean Distances: ")
+for idx, dist in enumerate(mean_distance_result):
+    if (idx+1) % len(num_prev_steps_list) == 0:
+        print(f"{dist:.1f}", end="\n")
+    else:
+        print(f"{dist:.1f}", end="\t")

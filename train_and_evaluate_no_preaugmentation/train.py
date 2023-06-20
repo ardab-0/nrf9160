@@ -27,8 +27,8 @@ learning_rate = 1e-2
 train_ratio = 0.9
 # num_prev_steps = 3
 # input_features = 15
-augmentation_count = 0
-augmentation_distance_m = 3
+augmentation_count = 8
+augmentation_distance_m = 20
 # network parameters
 
 num_prev_steps_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -93,7 +93,7 @@ def choose_model(model_name, in_out_size):
     if model_name == "mlp":
         model = Mlp(input_features=in_out_size["num_prev_steps"]*in_out_size["input_features"], output_classes=in_out_size["output_classes"])
     elif model_name == "lstm":
-        model = LSTMModel(input_dim=in_out_size["input_features"], hidden_dim=128, layer_dim=2, output_dim=in_out_size["output_classes"])
+        model = LSTMModel(input_dim=in_out_size["input_features"], hidden_dim=128, layer_dim=1, output_dim=in_out_size["output_classes"])
     else:
         print("Wrong model name entered.")
         model = None
