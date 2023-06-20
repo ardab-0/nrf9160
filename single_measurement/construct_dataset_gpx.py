@@ -2,12 +2,15 @@ from single_measurement.threaded_serial import File_Reader_Writer, Serial_Commun
 import pandas as pd
 import numpy as np
 from utils import construct_measurement_dictionary
+import gpxpy
+import gpxpy.gpx
+
 
 # File names
 
-measurement_filename = "../raw_measurements/Erlangen-15-02-2023-train.json"  # file produced by the capture_measurement.py
-coordinate_filename = "../raw_measurements/Erlangen-15-02-2023-train.kml"  # file recorded by the gps tracker application
-dataset_filename = "../combined_measurements/Erlangen-15-02-2023-train-minadjusted.csv"  # output file
+measurement_filename = "../raw_measurements/Erlangen-15-02-2023-test.json"  # file produced by the capture_measurement.py
+coordinate_filename = "../raw_measurements/Erlangen-15-02-2023-test.gpx"  # file recorded by the gps tracker application
+dataset_filename = "../combined_measurements/Erlangen-15-02-2023-test-minadjusted-gpx.csv"  # output file
 
 # File names
 
@@ -23,6 +26,19 @@ min_values = {
     "rsrq": -30
 }
 def main():
+    gpx_file = open(coordinate_filename, 'r')
+
+    gpx = gpxpy.parse(gpx_file)
+
+    coordinate_dict = {}
+    first_timestamp = gpx.tracks[0].segments[0].points[0].time.timestamp()
+    for track in gpx.tracks:
+        for segment in track.segments:
+            for point in segment.points:
+                time_stamp = point.time.timestamp()
+                coordinate_dict[str(int(time_stamp - first_timestamp))] = point
+
+
     min_value_np = np.array([min_values["physical_cell_id"], min_values["rsrp"], min_values["rsrq"]])
 
     file_reader_writer = File_Reader_Writer(measurement_filename)
@@ -76,11 +92,14 @@ def main():
                                                                 neighbor["n_rsrp"],
                                                                 neighbor["n_rsrq"]], dtype=int) - min_value_np
 
-        coordinates = coordinate_list[time_idx].split(",")
-        measurement_data_np[i, -2] = float(coordinates[0])
-        measurement_data_np[i, -1] = float(coordinates[1])
+        if str(time_idx) in coordinate_dict:
+            measurement_data_np[i, -2] = coordinate_dict[str(time_idx)].longitude
+            measurement_data_np[i, -1] = coordinate_dict[str(time_idx)].latitude
 
     measurement_data_df = pd.DataFrame(measurement_data_np, columns=column_labels)
+
+    # remove points which are not in coordinate_dict
+    measurement_data_df = measurement_data_df[measurement_data_df["latitude"] != -1]
     measurement_data_df.to_csv(dataset_filename, index=False)
     print("Dataset generated as: ", dataset_filename)
 
