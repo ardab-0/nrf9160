@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import DataLoader
 from train_and_evaluate.trainer import Trainer
 from train_and_evaluate.dataset import MeasurementDataset
-from nn_no_preaugmentation.mlp import Mlp, get_network_prediction
+from nn.mlp import Mlp, get_network_prediction
 
 
 def get_model_predictions_on_test_dataset(restored_checkpoint, checkpoint_folder, output_classes, input_features,
