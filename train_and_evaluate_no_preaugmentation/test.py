@@ -1,13 +1,13 @@
 import torch
 from torch.utils.data import DataLoader
-from train_and_evaluate.trainer import Trainer
-from train_and_evaluate.dataset import MeasurementDataset
+from train_and_evaluate_no_preaugmentation.trainer import Trainer
+from train_and_evaluate_no_preaugmentation.dataset import MeasurementDataset
 from nn.mlp import Mlp, get_network_prediction
 
 
 def get_model_predictions_on_test_dataset(restored_checkpoint, checkpoint_folder, output_classes, input_features,
                                           test_x_directory, test_y_directory,
-                                          batch_size, num_prev_steps, train_x_directory, train_y_directory, normalize=True):
+                                          batch_size, num_prev_steps, train_x_directory, train_y_directory ,model_type, normalize=True):
     train_dataset = MeasurementDataset(x_directory=train_x_directory,
                                        y_directory=train_y_directory,
                                        num_features=input_features,
@@ -15,7 +15,8 @@ def get_model_predictions_on_test_dataset(restored_checkpoint, checkpoint_folder
                                        augmentation_count=0,
                                        augmentation_distance_m=0,
                                        is_training=True,
-                                       normalize=normalize
+                                       normalize=normalize,
+                                       model_type=model_type
                                        )
     train_min_max = train_dataset.get_training_min_max()
 
@@ -27,7 +28,8 @@ def get_model_predictions_on_test_dataset(restored_checkpoint, checkpoint_folder
                                    augmentation_distance_m=0,
                                    is_training=False,
                                    training_set_min_max=train_min_max,
-                                   normalize=normalize
+                                   normalize=normalize,
+                                   model_type=model_type
                                    )
 
     test_dataloader = DataLoader(test_data, batch_size=batch_size)
@@ -71,6 +73,7 @@ def get_model_predictions_on_test_dataset(restored_checkpoint, checkpoint_folder
 
 
 if __name__ == "__main__":
+    model_type = "lstm"
     # dataset parameters
     GRID_WIDTH = 800
     GRID_HEIGHT = 800
@@ -83,8 +86,8 @@ if __name__ == "__main__":
 
     output_classes = int((GRID_WIDTH / grid_element_length) * (GRID_HEIGHT / grid_element_length))
     network_input_length = num_prev_steps * input_features
-
-    checkpoint_folder = f"checkpoints/mlp_{input_features}_grid{grid_element_length}_prev{num_prev_steps}{'_normalized' if normalize else ''}_minadjusted"
+    CHECKPOINT_FOLDER = f"grid_search_checkpoints"
+    checkpoint_folder = f"{CHECKPOINT_FOLDER}/{model_type}_{input_features}_grid{grid_element_length}_prev{num_prev_steps}{'_normalized' if normalize else ''}_minadjusted"
 
     train_x_directory = f"../datasets/erlangen_dataset_minadjusted_gridlen{grid_element_length}.csv"
     train_y_directory = f"../datasets/erlangen_dataset_minadjusted_gridlen{grid_element_length}_label.csv"
@@ -102,5 +105,6 @@ if __name__ == "__main__":
                                           num_prev_steps=num_prev_steps,
                                           train_x_directory=train_x_directory,
                                           train_y_directory=train_y_directory,
-                                          normalize=normalize
+                                          normalize=normalize,
+                                          model_type=model_type
                                           )

@@ -11,6 +11,7 @@ use_probability_weighting = False
 probability_weighting_k = 3
 # parameters which don't require retraining
 
+model_type = "lstm"
 
 CHECKPOINT_FOLDER = "grid_search_checkpoints"
 combined_test_measurement_filename = "erlangen_test_dataset_minadjusted.csv"
@@ -51,7 +52,7 @@ for param_comb in parameter_combinations:
     rows = len(grid_lines["horizontal_lines"]) - 1
     output_classes = cols * rows
 
-    checkpoint_folder = f"{CHECKPOINT_FOLDER}/mlp_{input_features}_grid{grid_element_length}_prev{num_prev_steps}{'_normalized' if normalize else ''}_minadjusted{'_augmented'+str(augmentation_count)+'-'+str(augmentation_distance_m) if augmentation_count>0 else ''}"
+    checkpoint_folder = f"{CHECKPOINT_FOLDER}/{model_type}_{input_features}_grid{grid_element_length}_prev{num_prev_steps}{'_normalized' if normalize else ''}_minadjusted{'_augmented'+str(augmentation_count)+'-'+str(augmentation_distance_m) if augmentation_count>0 else ''}"
 
 
     files = sorted(glob.glob(checkpoint_folder + '/*'))
@@ -74,7 +75,8 @@ for param_comb in parameter_combinations:
                                           num_prev_steps=num_prev_steps,
                                           train_x_directory=train_x_directory,
                                           train_y_directory=train_y_directory,
-                                          normalize=normalize
+                                          normalize=normalize,
+                                          model_type=model_type
                                           )
 
 

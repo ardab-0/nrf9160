@@ -5,6 +5,7 @@ import glob
 
 def main():
     # parameters
+    model_type  = "lstm"
     CHECKPOINT_FOLDER = "grid_search_checkpoints"
     GRID_WIDTH = 800
     GRID_HEIGHT = 800
@@ -15,10 +16,10 @@ def main():
     # num_prev_steps_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     # input_features_list = [6, 9, 12, 15, 18]
     input_features = 6
-    num_prev_steps = 10
+    num_prev_steps = 1
 
 
-    checkpoint_name = f"{CHECKPOINT_FOLDER}/mlp_{input_features}_grid{grid_element_length}_prev{num_prev_steps}{'_normalized' if normalize else ''}_minadjusted{'_augmented' + str(augmentation_count) + '-' + str(augmentation_distance_m) if augmentation_count > 0 else ''}"
+    checkpoint_name = f"{CHECKPOINT_FOLDER}/{model_type}_{input_features}_grid{grid_element_length}_prev{num_prev_steps}{'_normalized' if normalize else ''}_minadjusted{'_augmented' + str(augmentation_count) + '-' + str(augmentation_distance_m) if augmentation_count > 0 else ''}"
 
     # parameters
 
