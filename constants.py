@@ -83,4 +83,4 @@ frequency_lowerband_dict = {"1": 0,
 
 BEARING_ANGLE_DEG = 90
 COMBINED_MEASUREMENTS_PATH = "./combined_measurements/"
-DATASET_PATH = "./datasets/"  # save location of dataset which is divided into grid cells
+DATASET_PATH = "./multiple_datasets/"  # save location of dataset which is divided into grid cells
