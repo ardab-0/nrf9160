@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader
 from train_and_evaluate_no_preaugmentation.trainer import Trainer
 from train_and_evaluate_no_preaugmentation.dataset import MeasurementDataset
 from nn.mlp import Mlp, get_network_prediction
-
+from train import choose_model
 
 def get_model_predictions_on_test_dataset(restored_checkpoint, checkpoint_folder, output_classes, input_features,
                                           test_x_directory, test_y_directory,
@@ -34,7 +34,9 @@ def get_model_predictions_on_test_dataset(restored_checkpoint, checkpoint_folder
 
     test_dataloader = DataLoader(test_data, batch_size=batch_size)
 
-    model = Mlp(input_features=input_features * num_prev_steps, output_classes=output_classes)
+    model = choose_model(model_name=model_type, in_out_size={"num_prev_steps": num_prev_steps,
+                                                                 "input_features": input_features,
+                                                                 "output_classes": output_classes})
     crit = torch.nn.CrossEntropyLoss()
     optim = torch.optim.Adam(model.parameters(), lr=0.001)
 
