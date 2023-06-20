@@ -8,7 +8,7 @@ from nn.mlp import Mlp
 from lstm.lstm import LSTMModel
 from utils import generate_combinations
 
-model_type = "lstm"  # lstm, mlp
+model_type = "mlp"  # lstm, mlp
 CHECKPOINT_FOLDER = f"grid_search_checkpoints"
 restored_checkpoint = -1  # -1 for no restoration
 epochs = 1000  # train until this epoch
@@ -17,17 +17,17 @@ early_stopping_patience = 30
 # dataset parameters
 GRID_WIDTH = 800
 GRID_HEIGHT = 800
-grid_element_length = 50
+grid_element_length = 20
 
 normalize = True
 
 # network parameters
 batch_size = 128
-learning_rate = 1e-2
+learning_rate = 1e-3
 train_ratio = 0.9
 # num_prev_steps = 3
 # input_features = 15
-augmentation_count = 8
+augmentation_count = 0
 augmentation_distance_m = 20
 # network parameters
 
