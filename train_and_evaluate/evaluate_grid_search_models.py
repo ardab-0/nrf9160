@@ -45,7 +45,7 @@ for param_comb in parameter_combinations:
     input_features = param_comb[1]
 
     label_df, augmented_df, grid_lines, label_file_path, augmented_file_path = gridops.load(combined_test_measurement_filename,
-                                                                                        "../datasets", grid_element_length)
+                                                                                            "../datasets", grid_element_length)
 
     cols = len(grid_lines["vertical_lines"]) - 1
     rows = len(grid_lines["horizontal_lines"]) - 1

@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
-from nn_no_preaugmentation.trainer import Trainer
-from nn_no_preaugmentation.dataset import MeasurementDataset
+from train_and_evaluate.trainer import Trainer
+from train_and_evaluate.dataset import MeasurementDataset
 from nn_no_preaugmentation.mlp import Mlp, get_network_prediction
 
 

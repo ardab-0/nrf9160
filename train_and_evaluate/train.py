@@ -4,7 +4,7 @@ from dataset import MeasurementDataset
 from trainer import Trainer
 from matplotlib import pyplot as plt
 import numpy as np
-from mlp import Mlp
+from nn_no_preaugmentation.mlp import Mlp
 from utils import generate_combinations
 
 
