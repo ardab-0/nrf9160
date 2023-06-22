@@ -7,11 +7,11 @@ import glob
 
 # parameters which don't require retraining
 remove_outliers = True
-use_probability_weighting = True
+use_probability_weighting = False
 probability_weighting_k = 3
 # parameters which don't require retraining
 
-model_type = "mlp"
+model_type = "lstm"
 CHECKPOINT_FOLDER = "grid_search_checkpoints"
 combined_test_measurement_filename = "erlangen_test_dataset_minadjusted.csv"
 GRID_WIDTH = 800
