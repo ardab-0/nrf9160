@@ -6,8 +6,8 @@ from geodesic_calculations import point_at, get_distance_and_bearing
 import os
 import json
 import nn.test
-
-
+import lstm.test
+import random_forest.random_forest
 
 
 # Helper functions
@@ -309,7 +309,7 @@ def remove_outliers(prediction_coordinates_df, label_coordinates_df, threshold, 
     return prediction_coordinates_df.drop(rows_to_drop).reset_index(drop=True), label_coordinates_df.drop(rows_to_drop).reset_index(drop=True)
 
 
-def get_selected_model_predictions(model_name, grid_lines, use_probability_weighting, grid_length, bearing_angle_deg):
+def get_selected_model_predictions(model_name, grid_lines, use_probability_weighting, grid_length, bearing_angle_deg, use_cuda):
     prediction_grid_indices, label_grid_indices, prediction_probability_distributions = None, None, None
 
     if model_name == "mlp_9_grid100":
@@ -321,7 +321,8 @@ def get_selected_model_predictions(model_name, grid_lines, use_probability_weigh
             test_x_directory="./datasets/erlangen_test_dataset_gridlen100.csv",
             test_y_directory="./datasets/erlangen_test_dataset_gridlen100_label.csv",
             batch_size=128,
-            num_prev_steps=1)
+            num_prev_steps=1,
+            use_cuda=use_cuda)
 
     elif model_name == "mlp_9_grid100_prev5":
 
@@ -333,7 +334,8 @@ def get_selected_model_predictions(model_name, grid_lines, use_probability_weigh
             test_x_directory="./datasets/erlangen_test_dataset_gridlen100.csv",
             test_y_directory="./datasets/erlangen_test_dataset_gridlen100_label.csv",
             batch_size=32,
-            num_prev_steps=5)
+            num_prev_steps=5,
+            use_cuda=use_cuda)
 
     elif model_name == "mlp_9_grid100_prev10":
 
@@ -345,7 +347,8 @@ def get_selected_model_predictions(model_name, grid_lines, use_probability_weigh
             test_x_directory="./datasets/erlangen_test_dataset_gridlen100.csv",
             test_y_directory="./datasets/erlangen_test_dataset_gridlen100_label.csv",
             batch_size=32,
-            num_prev_steps=10)
+            num_prev_steps=10,
+            use_cuda=use_cuda)
 
     elif model_name == "mlp_9_grid50_prev1":
 
@@ -357,7 +360,8 @@ def get_selected_model_predictions(model_name, grid_lines, use_probability_weigh
             test_x_directory="./datasets/erlangen_test_dataset_gridlen50.csv",
             test_y_directory="./datasets/erlangen_test_dataset_gridlen50_label.csv",
             batch_size=32,
-            num_prev_steps=1)
+            num_prev_steps=1,
+            use_cuda=use_cuda)
 
 
     elif model_name == "mlp_9_grid50_prev5":
@@ -370,7 +374,8 @@ def get_selected_model_predictions(model_name, grid_lines, use_probability_weigh
             test_x_directory="./datasets/erlangen_test_dataset_gridlen50.csv",
             test_y_directory="./datasets/erlangen_test_dataset_gridlen50_label.csv",
             batch_size=32,
-            num_prev_steps=5)
+            num_prev_steps=5,
+            use_cuda=use_cuda)
 
     elif model_name == "mlp_9_grid50_prev10":
 
@@ -382,7 +387,8 @@ def get_selected_model_predictions(model_name, grid_lines, use_probability_weigh
             test_x_directory="./datasets/erlangen_test_dataset_gridlen50.csv",
             test_y_directory="./datasets/erlangen_test_dataset_gridlen50_label.csv",
             batch_size=32,
-            num_prev_steps=10)
+            num_prev_steps=10,
+            use_cuda=use_cuda)
 
     elif model_name == "mlp_9_grid20_prev1":
 
@@ -394,7 +400,8 @@ def get_selected_model_predictions(model_name, grid_lines, use_probability_weigh
             test_x_directory="./datasets/erlangen_test_dataset_gridlen20.csv",
             test_y_directory="./datasets/erlangen_test_dataset_gridlen20_label.csv",
             batch_size=32,
-            num_prev_steps=1)
+            num_prev_steps=1,
+            use_cuda=use_cuda)
 
     elif model_name == "mlp_9_grid20_prev5":
 
@@ -406,7 +413,8 @@ def get_selected_model_predictions(model_name, grid_lines, use_probability_weigh
             test_x_directory="./datasets/erlangen_test_dataset_gridlen20.csv",
             test_y_directory="./datasets/erlangen_test_dataset_gridlen20_label.csv",
             batch_size=32,
-            num_prev_steps=5)
+            num_prev_steps=5,
+            use_cuda=use_cuda)
 
     elif model_name == "mlp_9_grid20_prev10":
 
@@ -418,7 +426,8 @@ def get_selected_model_predictions(model_name, grid_lines, use_probability_weigh
             test_x_directory="./datasets/erlangen_test_dataset_gridlen20.csv",
             test_y_directory="./datasets/erlangen_test_dataset_gridlen20_label.csv",
             batch_size=32,
-            num_prev_steps=10)
+            num_prev_steps=10,
+            use_cuda=use_cuda)
 
     elif model_name == "mlp_9_grid10_prev1":
 
@@ -430,7 +439,8 @@ def get_selected_model_predictions(model_name, grid_lines, use_probability_weigh
             test_x_directory="./datasets/erlangen_test_dataset_gridlen10.csv",
             test_y_directory="./datasets/erlangen_test_dataset_gridlen10_label.csv",
             batch_size=32,
-            num_prev_steps=1)
+            num_prev_steps=1,
+            use_cuda=use_cuda)
 
     elif model_name == "lstm_9_grid100_prev5":
         prediction_grid_indices, label_grid_indices, prediction_probability_distributions = lstm.test.get_model_predictions_on_test_dataset(
@@ -510,55 +520,6 @@ def get_selected_model_predictions(model_name, grid_lines, use_probability_weigh
             y_directory="./datasets/erlangen_test_dataset_minadjusted_gridlen20_label.csv",
             batch_size=32,
             num_prev_steps=10)
-
-    elif model_name == "mlp_18_grid50_prev15_normalized":
-        prediction_grid_indices, label_grid_indices, prediction_probability_distributions = nn_no_preaugmentation.test.get_model_predictions_on_test_dataset(
-                                                restored_checkpoint=100,
-                                              checkpoint_folder="./nn_no_preaugmentation/checkpoints/mlp_18_grid50_prev15_normalized",
-                                              output_classes=64 * 4,
-                                              input_features=18,
-                                              test_x_directory="./datasets/erlangen_test_dataset_gridlen50.csv",
-                                              test_y_directory="./datasets/erlangen_test_dataset_gridlen50_label.csv",
-                                              batch_size=32,
-                                              num_prev_steps=15,
-                                              train_x_directory="./datasets/erlangen_dataset_gridlen50.csv",
-                                              train_y_directory="./datasets/erlangen_dataset_gridlen50_label.csv"
-                                              )
-    elif model_name == "mlp_9_grid50_prev3_normalized_minadjusted":
-
-        # dataset parameters
-        GRID_WIDTH = 800
-        GRID_HEIGHT = 800
-        grid_element_length = 50
-        num_prev_steps = 3
-        input_features = 9
-        restored_checkpoint = 156
-        normalize = True
-        # dataset parameters
-
-        output_classes = int((GRID_WIDTH / grid_element_length) * (GRID_HEIGHT / grid_element_length))
-        network_input_length = num_prev_steps * input_features
-
-        checkpoint_folder = f"./nn_no_preaugmentation/checkpoints/mlp_{input_features}_grid{grid_element_length}_prev{num_prev_steps}{'_normalized' if normalize else ''}_minadjusted"
-
-        train_x_directory = f"./datasets/erlangen_dataset_minadjusted_gridlen{grid_element_length}.csv"
-        train_y_directory = f"./datasets/erlangen_dataset_minadjusted_gridlen{grid_element_length}_label.csv"
-
-        test_x_directory = f"./datasets/erlangen_test_dataset_minadjusted_gridlen{grid_element_length}.csv"
-        test_y_directory = f"./datasets/erlangen_test_dataset_minadjusted_gridlen{grid_element_length}_label.csv"
-
-        prediction_grid_indices, label_grid_indices, prediction_probability_distributions = nn_no_preaugmentation.test.get_model_predictions_on_test_dataset(restored_checkpoint=restored_checkpoint,
-                                          checkpoint_folder=checkpoint_folder,
-                                          output_classes=output_classes,
-                                          input_features=input_features,
-                                          test_x_directory=test_x_directory,
-                                          test_y_directory=test_y_directory,
-                                          batch_size=32,
-                                          num_prev_steps=num_prev_steps,
-                                          train_x_directory=train_x_directory,
-                                          train_y_directory=train_y_directory,
-                                          normalize=normalize
-                                          )
 
     elif model_name == "random_forest_grid20":
         @st.cache_resource

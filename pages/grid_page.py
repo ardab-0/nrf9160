@@ -50,8 +50,11 @@ if mode == "Inference":
 
     selected_model_name = st.selectbox('Select model type', MODELS)
 
+    selected_device_type = st.selectbox('Use CPU / GPU', ["cpu", "cuda"])
+    use_cuda = False if selected_device_type == "cpu" else True
+
     prediction_coordinates_df = gridops.get_selected_model_predictions(selected_model_name, grid_lines,
-                                                                       use_probability_weighting=False, grid_length=grid_length, bearing_angle_deg=BEARING_ANGLE_DEG)
+                                                                       use_probability_weighting=False, grid_length=grid_length, bearing_angle_deg=BEARING_ANGLE_DEG, use_cuda=use_cuda)
 
     label_coordinates_df = label_df[["latitude", "longitude"]]
 

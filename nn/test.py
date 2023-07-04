@@ -9,7 +9,7 @@ import pandas as pd
 
 def get_model_predictions_on_test_dataset(restored_checkpoint, checkpoint_folder, output_classes, input_features,
                                           test_x_directory, test_y_directory,
-                                          batch_size, num_prev_steps):
+                                          batch_size, num_prev_steps, use_cuda):
 
 
     test_data = MeasurementDataset(x_directory=test_x_directory,
@@ -22,9 +22,9 @@ def get_model_predictions_on_test_dataset(restored_checkpoint, checkpoint_folder
 
     model = Mlp(input_features=input_features * num_prev_steps, output_classes=output_classes)
     crit = torch.nn.CrossEntropyLoss()
-    trainer = Trainer(model, crit, checkpoint_folder=checkpoint_folder)
+    trainer = Trainer(model, crit, checkpoint_folder=checkpoint_folder, cuda=use_cuda)
     trainer.restore_checkpoint(restored_checkpoint)
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() and use_cuda else "cpu")
     print(device)
 
     average_accuracy = 0
