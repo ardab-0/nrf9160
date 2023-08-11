@@ -21,20 +21,20 @@ class LSTMModel(nn.Module):
         self.fc = nn.Linear(hidden_dim, output_dim)
 
     def forward(self, x):
-        # Initialize hidden state with zeros
-        h0 = torch.zeros(self.layer_dim, x.size(0), self.hidden_dim).requires_grad_()
+        # # Initialize hidden state with zeros
+        # h0 = torch.zeros(self.layer_dim, x.size(0), self.hidden_dim).requires_grad_()
+        #
+        # # Initialize cell state
+        # c0 = torch.zeros(self.layer_dim, x.size(0), self.hidden_dim).requires_grad_()
+        # if torch.cuda.is_available():
+        #     h0 = h0.cuda()
+        #     c0 = c0.cuda()
+        #
+        # # We need to detach as we are doing truncated backpropagation through time (BPTT)
+        # # If we don't, we'll backprop all the way to the start even after going through another batch
+        # out, (hn, cn) = self.lstm(x, (h0.detach(), c0.detach()))
 
-        # Initialize cell state
-        c0 = torch.zeros(self.layer_dim, x.size(0), self.hidden_dim).requires_grad_()
-        if torch.cuda.is_available():
-            h0 = h0.cuda()
-            c0 = c0.cuda()
-
-        # We need to detach as we are doing truncated backpropagation through time (BPTT)
-        # If we don't, we'll backprop all the way to the start even after going through another batch
-        out, (hn, cn) = self.lstm(x, (h0.detach(), c0.detach()))
-
-
+        out, (hn, cn) = self.lstm(x)
         out = self.fc(out[:, -1, :])
 
         return out
