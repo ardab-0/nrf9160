@@ -4,16 +4,30 @@ from constants import BEARING_ANGLE_DEG
 from utils import generate_combinations
 from test import get_model_predictions_on_test_dataset
 import glob
+import sys
+
 
 # parameters which don't require retraining
-remove_outliers = True
+remove_outliers = False
 use_probability_weighting = False
 probability_weighting_k = 3
 # parameters which don't require retraining
 
+dataset_type = "normal"
 model_type = "lstm"
 CHECKPOINT_FOLDER = "grid_search_checkpoints"
-combined_test_measurement_filename = "erlangen_test_dataset_minadjusted.csv"
+
+
+# combined_test_measurement_filename = "erlangen_test_dataset_minadjusted.csv"
+if dataset_type == "time-idx" :
+    combined_test_measurement_filename = "Erlangen-test-timeidx-minadjusted.csv"
+elif dataset_type == "normal":
+    combined_test_measurement_filename = "erlangen_test_dataset_minadjusted.csv"
+elif dataset_type == "gpx":
+    combined_test_measurement_filename = "Erlangen-15-02-2023-test-minadjusted-gpx.csv"
+else:
+    sys.exit("Wrong dataset type.")
+
 GRID_WIDTH = 800
 GRID_HEIGHT = 800
 grid_element_length = 20
@@ -24,7 +38,7 @@ augmentation_distance_m = 20
 
 
 num_prev_steps_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-input_features_list = [6, 9, 12, 15, 18]
+input_features_list = [7, 10, 13, 16, 19] if dataset_type == "time-idx" else [6, 9, 12, 15, 18]
 parameter_lists = [num_prev_steps_list, input_features_list]
 parameter_combinations = generate_combinations(parameter_lists)
 mean_distance_result = []
@@ -49,11 +63,24 @@ for param_comb in parameter_combinations:
     files = sorted(glob.glob(checkpoint_folder + '/*'))
     last_epoch = int((files[-1].split("_")[-1]).split(".")[0])
 
-    train_x_directory = f"../datasets/erlangen_dataset_minadjusted_gridlen{grid_element_length}.csv"
-    train_y_directory = f"../datasets/erlangen_dataset_minadjusted_gridlen{grid_element_length}_label.csv"
-
-    test_x_directory = f"../datasets/erlangen_test_dataset_minadjusted_gridlen{grid_element_length}.csv"
-    test_y_directory = f"../datasets/erlangen_test_dataset_minadjusted_gridlen{grid_element_length}_label.csv"
+    if dataset_type == "normal":
+        train_x_directory = f"../datasets/erlangen_dataset_minadjusted_gridlen{grid_element_length}.csv"
+        train_y_directory = f"../datasets/erlangen_dataset_minadjusted_gridlen{grid_element_length}_label.csv"
+        test_x_directory = f"../datasets/erlangen_test_dataset_minadjusted_gridlen{grid_element_length}.csv"
+        test_y_directory = f"../datasets/erlangen_test_dataset_minadjusted_gridlen{grid_element_length}_label.csv"
+    elif dataset_type == "gpx":
+        train_x_directory = f"../datasets/Erlangen-15-02-2023-train-minadjusted-gpx_gridlen{grid_element_length}.csv"
+        train_y_directory = f"../datasets/Erlangen-15-02-2023-train-minadjusted-gpx_gridlen{grid_element_length}_label.csv"
+        test_x_directory = f"../datasets/Erlangen-15-02-2023-test-minadjusted-gpx_gridlen{grid_element_length}.csv"
+        test_y_directory = f"../datasets/Erlangen-15-02-2023-test-minadjusted-gpx_gridlen{grid_element_length}_label.csv"
+    elif dataset_type == "time-idx":
+        train_x_directory = f"../datasets/Erlangen-train-timeidx-minadjusted_gridlen{grid_element_length}.csv"
+        train_y_directory = f"../datasets/Erlangen-train-timeidx-minadjusted_gridlen{grid_element_length}_label.csv"
+        test_x_directory = f"../datasets/Erlangen-test-timeidx-minadjusted_gridlen{grid_element_length}.csv"
+        test_y_directory = f"../datasets/Erlangen-test-timeidx-minadjusted_gridlen{grid_element_length}_label.csv"
+    else:
+        print("Wrong dataset type.")
+        break
 
     prediction_grid_indices, label_grid_indices, prediction_probability_distributions = get_model_predictions_on_test_dataset(
         restored_checkpoint=last_epoch,
@@ -62,7 +89,7 @@ for param_comb in parameter_combinations:
         input_features=input_features,
         test_x_directory=test_x_directory,
         test_y_directory=test_y_directory,
-        batch_size=32,
+        batch_size=16,
         num_prev_steps=num_prev_steps,
         train_x_directory=train_x_directory,
         train_y_directory=train_y_directory,

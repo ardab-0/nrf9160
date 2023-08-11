@@ -5,12 +5,11 @@ from utils import construct_measurement_dictionary
 import gpxpy
 import gpxpy.gpx
 
-
 # File names
 
-measurement_filename = "../raw_measurements/Erlangen-15-02-2023-test.json"  # file produced by the capture_measurement.py
-coordinate_filename = "../raw_measurements/Erlangen-15-02-2023-test.gpx"  # file recorded by the gps tracker application
-dataset_filename = "../combined_measurements/Erlangen-15-02-2023-test-minadjusted-gpx.csv"  # output file
+measurement_filename = "../raw_measurements/Erlangen-15-02-2023-train.json"  # file produced by the capture_measurement.py
+coordinate_filename = "../raw_measurements/Erlangen-15-02-2023-train.gpx"  # file recorded by the gps tracker application
+dataset_filename = "../combined_measurements/Erlangen-15-02-2023-train-minadjusted-gpx.csv"  # output file
 
 # File names
 
@@ -25,6 +24,8 @@ min_values = {
     "rsrp": -17,
     "rsrq": -30
 }
+
+
 def main():
     gpx_file = open(coordinate_filename, 'r')
 
@@ -38,13 +39,12 @@ def main():
                 time_stamp = point.time.timestamp()
                 coordinate_dict[str(int(time_stamp - first_timestamp))] = point
 
-
-    min_value_np = np.array([min_values["physical_cell_id"], min_values["rsrp"], min_values["rsrq"]])
+    min_value_np = np.array([0, min_values["physical_cell_id"], min_values["rsrp"], min_values["rsrq"]])
 
     file_reader_writer = File_Reader_Writer(measurement_filename)
     measurements = file_reader_writer.read(get_orig_pos=False)
 
-    main_base_station_columns = ["current_phys_cell_id", "current_rsrp", "current_rsrq"]
+    main_base_station_columns = ["time_s", "current_phys_cell_id", "current_rsrp", "current_rsrq"]
     neighbor_base_station_columns = ["n_phys_cell_id", "n_rsrp", "n_rsrq"]
     lat_lon = 2
 
@@ -58,7 +58,7 @@ def main():
     measurement_data_np = np.ones((len(measurements), len(main_base_station_columns) + max_neighbor_count * len(
         neighbor_base_station_columns) + lat_lon)) * -1  # if there are missing values, th ey will be represented by -1
 
-    column_labels = ["current_phys_cell_id", "current_rsrp", "current_rsrq"]
+    column_labels = ["time_s","current_phys_cell_id", "current_rsrp", "current_rsrq"]
     for i in range(max_neighbor_count):
         column_labels.append(str(i + 1) + "_phys_cell_id")
         column_labels.append(str(i + 1) + "_rsrp")
@@ -80,17 +80,19 @@ def main():
         dictionary = construct_measurement_dictionary(measurement)
 
         time_idx = int(round(int(dictionary["measurement_time"]) / 1000))
-        measurement_data_np[i, :3] = np.array([dictionary["current_phys_cell_id"],
-                                               dictionary["current_rsrp"],
-                                               dictionary["current_rsrq"]
-                                               ], dtype=int) - min_value_np
+        measurement_data_np[i, :4] = np.array([
+            time_idx,
+            dictionary["current_phys_cell_id"],
+            dictionary["current_rsrp"],
+            dictionary["current_rsrq"]
+        ], dtype=int) - min_value_np
         if "neighbor_cells" in dictionary:
             for j, neighbor in enumerate(dictionary["neighbor_cells"]):
                 measurement_data_np[i, len(main_base_station_columns) + len(neighbor_base_station_columns) * j:len(
                     main_base_station_columns) + len(neighbor_base_station_columns) * j + len(
                     neighbor_base_station_columns)] = np.array([neighbor["n_phys_cell_id"],
                                                                 neighbor["n_rsrp"],
-                                                                neighbor["n_rsrq"]], dtype=int) - min_value_np
+                                                                neighbor["n_rsrq"]], dtype=int) - min_value_np[1:]
 
         if str(time_idx) in coordinate_dict:
             measurement_data_np[i, -2] = coordinate_dict[str(time_idx)].longitude

@@ -25,7 +25,7 @@ class MeasurementDataset(Dataset):
         :param training_set_min_max: (min, max) min and max of training dataset, must be entered if test dataset is used
         :param rnd_seed:
         """
-        np.random.seed(rnd_seed)
+        #np.random.seed(rnd_seed)
         self.model_type = model_type
         self.augmentation_count = augmentation_count
         self.augmentation_distance_m = augmentation_distance_m
