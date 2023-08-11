@@ -83,5 +83,6 @@ frequency_lowerband_dict = {"1": 0,
 
 BEARING_ANGLE_DEG = 90
 COMBINED_MEASUREMENTS_PATH = "./combined_measurements/"
+GRID_PAGE_DATASET_PATH = "./grid_page_datasets/"
 #DATASET_PATH = "./multiple_datasets/"  # save location of multiple measurement
 DATASET_PATH = "./datasets/"  # save location of single measurement
