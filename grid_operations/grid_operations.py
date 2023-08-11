@@ -7,8 +7,9 @@ import os
 import json
 import nn.test
 import lstm.test
+import train_and_evaluate_no_preaugmentation.test
 import random_forest.random_forest
-
+import glob
 
 # Helper functions
 
@@ -307,6 +308,55 @@ def remove_outliers(prediction_coordinates_df, label_coordinates_df, threshold, 
             rows_to_drop.append(i)
 
     return prediction_coordinates_df.drop(rows_to_drop).reset_index(drop=True), label_coordinates_df.drop(rows_to_drop).reset_index(drop=True)
+
+def get_selected_grid_search_model_predictions(num_prev_steps, input_features, grid_lines, use_probability_weighting, grid_length, bearing_angle_deg, use_cuda):
+    model_type = "lstm"
+    # dataset parameters
+    GRID_WIDTH = 800
+    GRID_HEIGHT = 800
+    grid_element_length = 20
+    normalize = True
+    # dataset parameters
+
+    output_classes = int((GRID_WIDTH / grid_element_length) * (GRID_HEIGHT / grid_element_length))
+    network_input_length = num_prev_steps * input_features
+    CHECKPOINT_FOLDER = f"train_and_evaluate_no_preaugmentation/grid_search_checkpoints"
+    checkpoint_folder = f"{CHECKPOINT_FOLDER}/{model_type}_{input_features}_grid{grid_element_length}_prev{num_prev_steps}{'_normalized' if normalize else ''}_minadjusted"
+
+    train_x_directory = f"./datasets/erlangen_dataset_minadjusted_gridlen{grid_element_length}.csv"
+    train_y_directory = f"./datasets/erlangen_dataset_minadjusted_gridlen{grid_element_length}_label.csv"
+
+    test_x_directory = f"./datasets/erlangen_test_dataset_minadjusted_gridlen{grid_element_length}.csv"
+    test_y_directory = f"./datasets/erlangen_test_dataset_minadjusted_gridlen{grid_element_length}_label.csv"
+
+    files = sorted(glob.glob(checkpoint_folder + '/*'))
+    print(files)
+    last_epoch = int((files[-1].split("_")[-1]).split(".")[0])
+
+    prediction_grid_indices, label_grid_indices, prediction_probability_distributions = train_and_evaluate_no_preaugmentation.test.get_model_predictions_on_test_dataset(
+        restored_checkpoint=last_epoch,
+        checkpoint_folder=checkpoint_folder,
+        output_classes=output_classes,
+        input_features=input_features,
+        test_x_directory=test_x_directory,
+        test_y_directory=test_y_directory,
+        batch_size=16,
+        num_prev_steps=num_prev_steps,
+        train_x_directory=train_x_directory,
+        train_y_directory=train_y_directory,
+        normalize=True,
+        model_type="lstm"
+    )
+
+    if use_probability_weighting is False:
+        prediction_coordinates_df = grid_index_to_coordinates(grid_lines, prediction_grid_indices)
+    else:
+        prediction_coordinates_df = probability_distribution_to_coordinates(grid_lines,
+                                                                            prediction_probability_distributions,
+                                                                            grid_length, bearing_angle_deg, k=1)
+
+    return prediction_coordinates_df
+
 
 
 def get_selected_model_predictions(model_name, grid_lines, use_probability_weighting, grid_length, bearing_angle_deg, use_cuda):

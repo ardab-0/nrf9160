@@ -10,15 +10,7 @@ from constants import BEARING_ANGLE_DEG, GRID_PAGE_DATASET_PATH, DATASET_PATH
 
 combined_measurement_filenames = glob.glob(GRID_PAGE_DATASET_PATH + "*.csv")
 
-MODELS = ["mlp_9_grid100", "mlp_9_grid100_prev5", "mlp_9_grid100_prev10",
-          "mlp_9_grid50_prev1", "mlp_9_grid50_prev5", "mlp_9_grid50_prev10",
-          "mlp_9_grid20_prev1", "mlp_9_grid20_prev5", "mlp_9_grid20_prev10",
-          "mlp_9_grid10_prev1",
-          "lstm_9_grid100_prev5", "lstm_9_grid100_prev10",
-          "lstm_9_grid50_prev5", "lstm_9_grid50_prev10",
-          "lstm_9_grid20_prev5", "lstm_9_grid20_prev10",
-          "lstm_24_grid20_prev10",
-          "random_forest_grid20", "mlp_18_grid50_prev15_normalized", "mlp_9_grid50_prev3_normalized_minadjusted"]
+
 layers_to_plot = []
 selected_combined_measurement_filename = st.sidebar.selectbox("Select file to load", combined_measurement_filenames)
 
@@ -48,12 +40,14 @@ if mode == "Inference":
     rows = len(grid_lines["horizontal_lines"]) - 1
     output_classes = cols * rows
 
-    selected_model_name = st.selectbox('Select model type', MODELS)
 
     selected_device_type = st.sidebar.selectbox('Use CPU / GPU', ["cpu", "cuda"])
     use_cuda = False if selected_device_type == "cpu" else True
 
-    prediction_coordinates_df = gridops.get_selected_model_predictions(selected_model_name, grid_lines,
+    num_prev_steps = st.sidebar.slider('Number of previous steps: ', 1, 10)
+    input_features = st.sidebar.slider('Number of input features: ', 6, 18, step=3)
+
+    prediction_coordinates_df = gridops.get_selected_grid_search_model_predictions(num_prev_steps,input_features, grid_lines,
                                                                        use_probability_weighting=False, grid_length=grid_length, bearing_angle_deg=BEARING_ANGLE_DEG, use_cuda=use_cuda)
 
     label_coordinates_df = label_df[["latitude", "longitude"]]

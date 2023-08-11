@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader
 from train_and_evaluate_no_preaugmentation.trainer import Trainer
 from train_and_evaluate_no_preaugmentation.dataset import MeasurementDataset
 from nn.mlp import Mlp, get_network_prediction
-from train import choose_model
+from train_and_evaluate_no_preaugmentation.train import choose_model
 
 def get_model_predictions_on_test_dataset(restored_checkpoint, checkpoint_folder, output_classes, input_features,
                                           test_x_directory, test_y_directory,

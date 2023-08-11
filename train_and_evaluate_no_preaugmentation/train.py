@@ -1,7 +1,7 @@
 import pandas as pd
 import torch as t
-from dataset import MeasurementDataset
-from trainer import Trainer
+from train_and_evaluate_no_preaugmentation.dataset import MeasurementDataset
+from train_and_evaluate_no_preaugmentation.trainer import Trainer
 from matplotlib import pyplot as plt
 import numpy as np
 from nn.mlp import Mlp
