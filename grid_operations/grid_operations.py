@@ -343,7 +343,8 @@ def get_selected_grid_search_model_predictions(num_prev_steps, input_features, g
         train_x_directory=train_x_directory,
         train_y_directory=train_y_directory,
         normalize=True,
-        model_type="lstm"
+        model_type="lstm",
+        use_cuda=use_cuda
     )
 
     if use_probability_weighting is False:
