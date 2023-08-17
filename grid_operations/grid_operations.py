@@ -154,14 +154,14 @@ def save(label_df, augmented_df, grid_lines, filename, save_path, grid_length):
         json.dump(grid_lines, fp)
 
 
-def load(filename, save_path, grid_length):
+def load(filename, save_path, grid_length, is_minadjusted=False):
     head, tail = os.path.split(filename)
 
     filename_list = tail.split(".")
 
-    label_filename = filename_list[0] + "_gridlen" + str(grid_length) + "_label." + filename_list[1]
-    data_filename = filename_list[0] + "_gridlen" + str(grid_length) + "." + filename_list[1]
-    grid_lines_name = filename_list[0] + "_grid_lines_gridlen" + str(grid_length) + ".json"
+    label_filename = filename_list[0] + ("_minadjusted" if is_minadjusted else "") + "_gridlen" + str(grid_length) + "_label." + filename_list[1]
+    data_filename = filename_list[0] + ("_minadjusted" if is_minadjusted else "") + "_gridlen" + str(grid_length) + "." + filename_list[1]
+    grid_lines_name = filename_list[0] + ("_minadjusted" if is_minadjusted else "") + "_grid_lines_gridlen" + str(grid_length) + ".json"
 
     label_file_path = os.path.join(save_path, label_filename)
     data_file_path = os.path.join(save_path, data_filename)
@@ -309,16 +309,14 @@ def remove_outliers(prediction_coordinates_df, label_coordinates_df, threshold, 
 
     return prediction_coordinates_df.drop(rows_to_drop).reset_index(drop=True), label_coordinates_df.drop(rows_to_drop).reset_index(drop=True)
 
-def get_selected_grid_search_model_predictions(num_prev_steps, input_features, grid_lines, use_probability_weighting, grid_length, bearing_angle_deg, use_cuda):
+def get_selected_grid_search_model_predictions(num_prev_steps, input_features, grid_lines,
+                                               use_probability_weighting, grid_length, bearing_angle_deg, use_cuda,
+                                               output_classes, grid_element_length):
+    # dataset parameters
+    normalize = True
     model_type = "lstm"
     # dataset parameters
-    GRID_WIDTH = 800
-    GRID_HEIGHT = 800
-    grid_element_length = 20
-    normalize = True
-    # dataset parameters
 
-    output_classes = int((GRID_WIDTH / grid_element_length) * (GRID_HEIGHT / grid_element_length))
     network_input_length = num_prev_steps * input_features
     CHECKPOINT_FOLDER = f"train_and_evaluate_no_preaugmentation/grid_search_checkpoints"
     checkpoint_folder = f"{CHECKPOINT_FOLDER}/{model_type}_{input_features}_grid{grid_element_length}_prev{num_prev_steps}{'_normalized' if normalize else ''}_minadjusted"
