@@ -7,7 +7,7 @@ from train_and_evaluate_no_preaugmentation.train import choose_model
 
 def get_model_predictions_on_test_dataset(restored_checkpoint, checkpoint_folder, output_classes, input_features,
                                           test_x_directory, test_y_directory,
-                                          batch_size, num_prev_steps, train_x_directory, train_y_directory ,model_type, normalize=True):
+                                          batch_size, num_prev_steps, train_x_directory, train_y_directory ,model_type, normalize=True, use_cuda=False):
     train_dataset = MeasurementDataset(x_directory=train_x_directory,
                                        y_directory=train_y_directory,
                                        num_features=input_features,
@@ -40,9 +40,9 @@ def get_model_predictions_on_test_dataset(restored_checkpoint, checkpoint_folder
     crit = torch.nn.CrossEntropyLoss()
     optim = torch.optim.Adam(model.parameters(), lr=0.001)
 
-    trainer = Trainer(model, crit, optim=optim, checkpoint_folder=checkpoint_folder)
+    trainer = Trainer(model, crit, optim=optim, checkpoint_folder=checkpoint_folder, cuda=use_cuda)
     trainer.restore_checkpoint(restored_checkpoint)
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() and use_cuda else "cpu")
     print(device)
 
     average_accuracy = 0
